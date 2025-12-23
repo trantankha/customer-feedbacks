@@ -87,7 +87,7 @@ export default function FeedbackList() {
                                     <div className="flex items-center gap-2 group">
                                         <span className={`text-xs font-bold px-2 py-1 rounded select-none
                       ${item.analysis?.sentiment_label === 'POSITIVE' ? 'bg-green-100 text-green-700' :
-                                                item.analysis?.sentiment_label === 'NEGATIVE' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                                                item.analysis?.sentiment_label === 'NEGATIVE' ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-gray-700'}`}>
                                             {item.analysis?.sentiment_label || 'CHƯA XỬ LÝ'}
                                         </span>
                                         {/* Nút bút chì chỉ hiện khi hover chuột vào dòng này */}
