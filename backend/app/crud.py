@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from app import models
 from sqlalchemy import func
 from collections import Counter
+from datetime import datetime
+from datetime import timedelta
 
 # --- 1. TỪ ĐIỂN MAPPING (CẬP NHẬT THEO FILE THỰC TẾ) ---
 PLATFORM_MAPPING = {
@@ -42,23 +44,33 @@ def find_column(df_columns, possible_names):
     return None
 
 # --- 3. HÀM TẠO FEEDBACK (Tách ra để tái sử dụng) ---
-def create_feedback_with_analysis(db: Session, content: str, source_id: int = 1):
+def create_feedback_with_analysis(db: Session, content: str, source_id: int = 3, custom_time: datetime = None):
     from app import services # Import ở đây để tránh circular import
-    
-    # 1. Lưu Feedback gốc
+    """
+    Tạo Feedback. Nếu có custom_time (từ Extension) thì dùng, 
+    nếu không thì để Database tự lấy giờ hiện tại.
+    """
     db_feedback = models.Feedback(
-        raw_content=content, 
+        raw_content=content,
         source_id=source_id,
         status="PROCESSED"
     )
+
+    # 👇 LOGIC QUAN TRỌNG: Ghi đè thời gian
+    if custom_time:
+        db_feedback.received_at = custom_time
+        
     db.add(db_feedback)
     db.commit()
     db.refresh(db_feedback)
+
+    # ... (Phần gọi AI giữ nguyên không đổi) ...
+    source_name = "OTHER"
+    if source_id == 1: source_name = "FACEBOOK"
+    elif source_id == 2: source_name = "SHOPEE"
     
-    # 2. Gọi Service AI phân tích
-    ai_result = services.analyze_text(content)
+    ai_result = services.analyze_text(content, source=source_name)
     
-    # 3. Lưu kết quả phân tích
     db_analysis = models.AnalysisResult(
         feedback_id=db_feedback.id,
         sentiment_score=ai_result['score'],
@@ -299,3 +311,67 @@ def get_customer_history(db: Session, customer_name: str, limit: int = 20):
             if len(history) >= limit:
                 break
     return history
+
+def get_sentiment_trend(db: Session, days: int = 7):
+    """
+    Thống kê xu hướng (Tối ưu hóa + Xử lý ngày trống)
+    """
+    # 1. Xác định khung thời gian
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days - 1) # Lấy đủ range
+    
+    # 2. Query dữ liệu thô (Chỉ lấy cột cần thiết cho nhẹ)
+    # Lọc các bản ghi trong khoảng thời gian
+    feedbacks = db.query(models.Feedback.received_at, models.AnalysisResult.sentiment_label)\
+        .join(models.AnalysisResult)\
+        .filter(models.Feedback.received_at >= start_date)\
+        .all()
+    
+    # 3. Tạo khung xương ngày tháng đầy đủ (Full Date Range)
+    # Để đảm bảo ngày nào cũng hiển thị, kể cả ngày không có comment
+    idx = pd.date_range(start=start_date, end=end_date, freq='D').normalize()
+    
+    # Chuẩn bị cấu trúc dữ liệu mặc định (toàn số 0)
+    final_data = {
+        "dates": idx.strftime('%d/%m').tolist(),
+        "positive": [0] * len(idx),
+        "negative": [0] * len(idx),
+        "neutral": [0] * len(idx)
+    }
+
+    if not feedbacks:
+        return final_data
+
+    # 4. Xử lý dữ liệu bằng Pandas
+    try:
+        data = [{"date": f.received_at, "label": f.sentiment_label} for f in feedbacks]
+        df = pd.DataFrame(data)
+        
+        # Convert sang datetime và bỏ phần giờ phút (normalize) để group theo ngày
+        df['date'] = pd.to_datetime(df['date']).dt.normalize()
+        
+        # Gom nhóm: Đếm số lượng theo Ngày + Nhãn
+        # size() đếm số dòng, unstack(fill_value=0) để xoay bảng và điền 0 vào ô trống
+        grouped = df.groupby(['date', 'label']).size().unstack(fill_value=0)
+        
+        # Reindex: Ép bảng dữ liệu phải khớp với khung xương idx đã tạo ở bước 3
+        # fill_value=0: Nếu ngày đó trong DB không có, điền số 0
+        grouped = grouped.reindex(idx, fill_value=0)
+        
+        # 5. Trích xuất dữ liệu an toàn
+        # Kiểm tra xem cột có tồn tại không, nếu không thì lấy mảng 0
+        if 'POSITIVE' in grouped.columns:
+            final_data['positive'] = grouped['POSITIVE'].tolist()
+            
+        if 'NEGATIVE' in grouped.columns:
+            final_data['negative'] = grouped['NEGATIVE'].tolist()
+            
+        if 'NEUTRAL' in grouped.columns:
+            final_data['neutral'] = grouped['NEUTRAL'].tolist()
+            
+    except Exception as e:
+        print(f"⚠️ Lỗi xử lý biểu đồ: {e}")
+        # Nếu lỗi vẫn trả về data rỗng để frontend không chết
+        return final_data
+
+    return final_data

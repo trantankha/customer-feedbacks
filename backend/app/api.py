@@ -7,6 +7,7 @@ from fastapi import Form
 from datetime import datetime
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from dateutil import parser
 import pandas as pd
 import os
 
@@ -151,43 +152,57 @@ def analyze_customer(payload: CustomerAnalyzeRequest, db: Session = Depends(data
 @router.post("/feedbacks/batch-import")
 def batch_import_feedbacks(
     payload: schemas.ScrapeBatchRequest, 
-    background_tasks: BackgroundTasks, # Xử lý ngầm cho nhanh
+    background_tasks: BackgroundTasks,
     db: Session = Depends(database.get_db)
 ):
     print(f"📡 Nhận {len(payload.items)} comment từ Extension. URL: {payload.url}")
     
-    # Chúng ta tái sử dụng logic xử lý ngầm giống như CSV
-    # Nhưng lần này không cần đọc file, mà loop qua list items luôn
-    
-    # Định nghĩa hàm xử lý con (hoặc chuyển vào crud.py nếu muốn sạch code)
     def process_batch_items(items, source_platform):
         count = 0
-        # Xác định Source ID
-        src_id = 3 # Other
+        src_id = 3
         if source_platform == 'FACEBOOK': src_id = 1
         elif source_platform == 'SHOPEE': src_id = 2
             
         for item in items:
             try:
-                # 1. Tạo Feedback
-                # Lưu ý: Hàm create_feedback_with_analysis cần import từ crud
-                db_feedback = crud.create_feedback_with_analysis(db, item.content, source_id=src_id)
+                # 1. XỬ LÝ THỜI GIAN
+                real_time = None
+                if item.created_at:
+                    try:
+                        # Extension gửi lên dạng chuỗi ISO (2025-12-23T...)
+                        # Ta convert sang object datetime của Python
+                        real_time = parser.parse(item.created_at)
+                    except:
+                        print(f"⚠️ Không parse được ngày: {item.created_at}")
+                        real_time = None
+
+                # 2. GỌI CRUD VỚI THỜI GIAN THỰC
+                # Truyền real_time vào đây để nó lưu vào cột received_at
+                db_feedback = crud.create_feedback_with_analysis(
+                    db, 
+                    item.content, 
+                    source_id=src_id, 
+                    custom_time=real_time
+                )
                 
-                # 2. Update Metadata
+                # 3. Update Metadata (Các thông tin phụ)
                 db_feedback.customer_info = {
                     "name": item.author_name,
                     "likes": str(item.likes),
                     "imported_from": "chrome_extension",
-                    "original_url": payload.url
+                    "original_url": payload.url,
+                    "original_timestamp": item.created_at # Lưu thêm vào đây để backup
                 }
                 db.commit()
                 count += 1
             except Exception as e:
                 print(f"Lỗi dòng: {e}")
                 continue
-        print(f"✅ Đã import thành công {count} dòng từ Extension.")
+        print(f"✅ Đã import thành công {count} dòng.")
 
-    # Đẩy vào background tasks
     background_tasks.add_task(process_batch_items, payload.items, payload.items[0].source_platform if payload.items else "OTHER")
+    return {"message": "Đang xử lý...", "count": len(payload.items)}
 
-    return {"message": "Đã nhận dữ liệu, đang xử lý ngầm...", "count": len(payload.items)}
+@router.get("/dashboard/trend")
+def get_trend(days: int = 1, db: Session = Depends(database.get_db)):
+    return crud.get_sentiment_trend(db, days)
