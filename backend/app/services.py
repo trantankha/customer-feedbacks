@@ -7,7 +7,7 @@ GEMINI_API_KEY = settings.GEMINI_API_KEY
 
 try:
     genai.configure(api_key=GEMINI_API_KEY)
-    # Dùng model Gemini 1.5 Flash cho nhanh và rẻ (hoặc gemini-pro)
+    # Dùng model Gemini 2.5 Flash cho nhanh và rẻ (hoặc gemini-pro)
     chat_model = genai.GenerativeModel('gemini-2.5-flash')
     print("✅ Đã kết nối Google Gemini!")
 except Exception as e:
@@ -27,7 +27,33 @@ except Exception as e:
     print(f"❌ Lỗi tải Model: {e}")
     sentiment_pipeline = None
 
-def analyze_text(text: str):
+# 1. TỪ ĐIỂN E-COMMERCE (Shopee - Giữ nguyên cái cũ)
+ECOMMERCE_KEYWORDS = {
+    # Tích cực
+    "giao nhanh": "giao hàng", "đóng gói kỹ": "đóng gói", 
+    "chất lượng": "chất lượng", "rẻ": "giá cả", "đẹp": "hình thức",
+    # Tiêu cực
+    "chậm": "giao hàng", "vỡ": "đóng gói", "đắt": "giá cả", 
+    "xấu": "hình thức", "lừa đảo": "uy tín"
+}
+
+# 2. TỪ ĐIỂN SOCIAL (Facebook - Tổng quát hơn)
+SOCIAL_KEYWORDS = {
+    # Cảm xúc / Quan điểm
+    "đồng ý": "quan điểm", "ủng hộ": "quan điểm", "chuẩn": "đồng tình",
+    "hay": "nội dung", "ý nghĩa": "nội dung", "xúc động": "cảm xúc",
+    "tuyệt vời": "khen ngợi", "đỉnh": "khen ngợi", "xinh": "ngoại hình",
+    
+    # Tiêu cực / Tranh luận
+    "phản đối": "tranh luận", "sai": "tranh luận", "tào lao": "chê bai",
+    "nhảm": "nội dung", "xạo": "tin giả", "bịp": "tin giả",
+    "chửi": "thái độ", "trẻ trâu": "cộng đồng", "ngáo": "cộng đồng",
+    
+    # Hành động
+    "hóng": "tương tác", "chấm": "tương tác", "share": "chia sẻ"
+}
+
+def analyze_text(text: str, source: str = "OTHER"):
     """
     Phân tích cảm xúc sử dụng Deep Learning Model (PhoBERT) kết hợp trích xuất từ khóa.
     """
@@ -71,23 +97,28 @@ def analyze_text(text: str):
     # Phần này giúp hiển thị lên UI: Khách khen/chê cái gì?
     text_lower = text.lower()
     found_keywords = []
-    
-    keywords_dict = {
-        # Tích cực
-        "giao nhanh": "giao hàng", "đóng gói kỹ": "đóng gói", 
-        "chất lượng": "chất lượng", "rẻ": "giá cả", "đẹp": "hình thức",
-        # Tiêu cực
-        "chậm": "giao hàng", "vỡ": "đóng gói", "đắt": "giá cả", 
-        "xấu": "hình thức", "lừa đảo": "uy tín", "thái độ": "phục vụ"
-    }
 
-    for word, tag in keywords_dict.items():
+    # Chọn từ điển dựa trên nguồn
+    if source == "SHOPEE":
+        target_dict = ECOMMERCE_KEYWORDS
+    elif source == "FACEBOOK":
+        target_dict = SOCIAL_KEYWORDS
+    else:
+        # Nếu không rõ nguồn thì gộp cả hai (hoặc dùng cái nào tùy ý)
+        target_dict = {**ECOMMERCE_KEYWORDS, **SOCIAL_KEYWORDS}
+
+    # Quét từ khóa
+    for word, tag in target_dict.items():
         if word in text_lower:
-            # Logic đơn giản: Nếu label là POS thì tag là "Khen...", NEG là "Chê..."
+             # Logic prefix khen/chê đơn giản
             prefix = "khen" if ai_score > 0 else "chê" if ai_score < 0 else "về"
-            found_keywords.append(f"{tag}") # Chỉ lưu tag (vd: giá cả, giao hàng)
+            
+            # Với Facebook, đôi khi chỉ cần Tag chủ đề là đủ (VD: "về quan điểm")
+            if source == "FACEBOOK":
+                found_keywords.append(tag) 
+            else:
+                found_keywords.append(f"{tag}")
 
-    # Lọc trùng
     unique_keywords = list(set(found_keywords))[:4]
 
     return {

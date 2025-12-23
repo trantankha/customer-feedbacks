@@ -141,7 +141,7 @@ export default function CustomersPage() {
                             <button
                                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                 disabled={currentPage === 1}
-                                className="px-3 text-black py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 cursor-pointẻ text-black py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Trước
                             </button>
@@ -153,7 +153,7 @@ export default function CustomersPage() {
                                     <button
                                         key={pageNum}
                                         onClick={() => setCurrentPage(pageNum)}
-                                        className={`px-3 py-1 text-sm border rounded-md text-black ${currentPage === pageNum
+                                        className={`px-3 cursor-pointer py-1 text-sm border rounded-md text-black ${currentPage === pageNum
                                             ? 'bg-blue-200 border-blue-600'
                                             : 'border-gray-300 hover:bg-gray-50'
                                             }`}
@@ -166,7 +166,7 @@ export default function CustomersPage() {
                             <button
                                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                                 disabled={currentPage === totalPages}
-                                className="px-3 py-1 text-black text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 cursor-pointer py-1 text-black text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Tiếp
                             </button>

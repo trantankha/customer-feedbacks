@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional, Any
 from uuid import UUID
+from datetime import datetime
 
 # DTO cho kết quả phân tích
 class AnalysisBase(BaseModel):
@@ -14,8 +15,10 @@ class AnalysisBase(BaseModel):
 class FeedbackResponse(BaseModel):
     id: UUID
     raw_content: str
+    source_id: int
     customer_info: Any
     status: str
+    received_at: Optional[datetime] = None
     analysis: Optional[AnalysisBase] = None
     class Config:
         from_attributes = True
@@ -50,6 +53,7 @@ class ScrapedItem(BaseModel):
     source_platform: str # "FACEBOOK" hoặc "SHOPEE"
     author_name: Optional[str] = "Anonymous"
     likes: Optional[int] = 0
+    created_at: Optional[str] = None
     
 # Schema cho danh sách gửi lên
 class ScrapeBatchRequest(BaseModel):

@@ -1,89 +1,98 @@
-(async function () {
-    console.log("🚀 FeedbackPro Scraper bắt đầu chạy...");
+// Hàm hỗ trợ convert Unix Timestamp sang ISO String
+function convertToISODate(rawTimestamp) {
+    if (!rawTimestamp) return new Date().toISOString();
+    let ts = Number(rawTimestamp);
+    // Nếu là giây (10 số) thì nhân 1000 để thành mili-giây
+    if (ts < 10000000000) ts = ts * 1000;
+    return new Date(ts).toISOString();
+}
 
-    const currentUrl = window.location.href;
-    let platform = "OTHER";
-    let items = [];
+// Tiêm inject.js vào trang web
+const s = document.createElement('script');
+s.src = chrome.runtime.getURL('inject.js');
+s.onload = function () {
+    this.remove();
+};
+(document.head || document.documentElement).appendChild(s);
 
-    // --- LOGIC CÀO SHOPEE ---
-    if (currentUrl.includes("shopee.vn")) {
-        platform = "SHOPEE";
-        // Chọn tất cả các khối comment (Class này có thể thay đổi theo thời gian, cần inspect để check)
-        // Mẹo: Shopee class thường là .shopee-product-rating__main
-        const comments = document.querySelectorAll('.shopee-product-rating__main');
+// Lắng nghe thông điệp từ inject.js
+window.addEventListener("message", async (event) => {
+    // Chỉ nhận tin từ chính trang web này
+    if (event.source !== window) return;
 
-        comments.forEach(el => {
-            const contentEl = el.querySelector('.shopee-product-rating__content');
-            const authorEl = el.querySelector('.shopee-product-rating__author-name');
-            const timeEl = el.querySelector('.shopee-product-rating__time');
+    let itemsToProcess = [];
 
-            if (contentEl && contentEl.innerText.trim()) {
-                items.push({
-                    content: contentEl.innerText.trim(),
-                    source_platform: "SHOPEE",
-                    author_name: authorEl ? authorEl.innerText.trim() : "Anonymous",
-                    likes: 0 // Shopee web khó lấy like hơn, tạm để 0
-                });
+    if (event.data.type === "SHOPEE_DATA_INTERCEPTED") {
+        itemsToProcess = event.data.payload;
+    } else if (event.data.type === "FB_DATA_INTERCEPTED") {
+        itemsToProcess = event.data.payload;
+    }
+
+    if (itemsToProcess.length > 0) {
+        // --- CHUẨN HÓA DỮ LIỆU ---
+        const cleanItems = itemsToProcess.map(item => ({
+            content: item.content,
+            source_platform: item.source_platform,
+            author_name: item.author_name,
+            likes: item.likes,
+            created_at: convertToISODate(item.timestamp)
+        }));
+
+        // Lọc trùng lặp
+        const uniqueItems = Array.from(new Set(cleanItems.map(JSON.stringify))).map(JSON.parse);
+
+        console.log(`🚀 Đang gửi ${uniqueItems.length} dòng về Backend. Time mẫu: ${uniqueItems[0].created_at}`);
+        await sendToBackend(uniqueItems);
+    }
+
+    if (event.data.type && (event.data.type === "SHOPEE_DATA_INTERCEPTED")) {
+        console.log("📦 Bắt được gói tin Shopee:", event.data.payload);
+
+        const rawData = event.data.payload;
+
+        // 3. Chuẩn hóa dữ liệu JSON (Mapping)
+        // Shopee API trả về: data.data.ratings -> list comment
+        if (rawData.data && rawData.data.ratings) {
+            const items = rawData.data.ratings.map(r => ({
+                content: r.comment,
+                source_platform: "SHOPEE",
+                author_name: r.author_username,
+                likes: r.like_count || 0,
+                created_at: convertToISODate(r.timestamp)
+            }));
+
+            if (items.length > 0) {
+                // 4. Gửi về Backend ngay lập tức (Real-time)
+                await sendToBackend(items);
             }
-        });
+        }
     }
 
-    // --- LOGIC CÀO FACEBOOK (Cơ bản) ---
-    else if (currentUrl.includes("facebook.com")) {
-        platform = "FACEBOOK";
-        // Facebook rất khó cào vì class bị mã hóa (vd: x1yzt...). 
-        // Ta dùng attribute selector an toàn hơn: [dir="auto"] thường là nội dung comment
-        // Lưu ý: Đây chỉ là demo đơn giản. Cào Facebook chuẩn cần logic phức tạp hơn nhiều.
+    if (event.data.type === "FB_DATA_INTERCEPTED") {
+        const comments = event.data.payload; // Đây đã là list items chuẩn rồi
+        console.log(`📦 Bắt được ${comments.length} comment từ Facebook!`);
 
-        // Tìm các khối comment (div có role=article hoặc aria-label chứa Comment)
-        const commentBlocks = document.querySelectorAll('div[role="article"]'); // Selector tương đối
+        if (comments.length > 0) {
+            // Lọc trùng lặp đơn giản (trong cùng 1 batch)
+            const uniqueComments = Array.from(new Set(comments.map(JSON.stringify))).map(JSON.parse);
 
-        commentBlocks.forEach(el => {
-            // Thử tìm nội dung text
-            const textDiv = el.querySelector('div[dir="auto"]');
-            // Thử tìm tên người (thường là thẻ strong hoặc span class bold)
-            // Đây là đoán mò class, FB đổi liên tục
-            const userLink = el.querySelector('a[role="link"] span');
-
-            if (textDiv && textDiv.innerText.trim()) {
-                items.push({
-                    content: textDiv.innerText.trim(),
-                    source_platform: "FACEBOOK",
-                    author_name: userLink ? userLink.innerText : "Facebook User",
-                    likes: 0
-                });
-            }
-        });
+            await sendToBackend(uniqueComments);
+        }
     }
+});
 
-    console.log(`🔎 Tìm thấy ${items.length} comments trên ${platform}`);
-
-    if (items.length === 0) {
-        chrome.runtime.sendMessage({ action: "SCRAPE_ERROR", message: "Không tìm thấy comment nào (hoặc sai selector)!" });
-        return;
-    }
-
-    // --- GỬI VỀ BACKEND ---
+async function sendToBackend(items) {
     try {
-        const response = await fetch('http://127.0.0.1:8000/api/v1/feedbacks/batch-import', {
+        await fetch('http://127.0.0.1:8000/api/v1/feedbacks/batch-import', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                url: currentUrl,
+                url: window.location.href,
                 items: items
             })
         });
-
-        if (response.ok) {
-            chrome.runtime.sendMessage({ action: "SCRAPE_DONE", count: items.length });
-        } else {
-            chrome.runtime.sendMessage({ action: "SCRAPE_ERROR", message: "Server lỗi" });
-        }
-    } catch (err) {
-        console.error(err);
-        chrome.runtime.sendMessage({ action: "SCRAPE_ERROR", message: "Không kết nối được Backend" });
+        console.log(`✅ Đã đồng bộ ${items.length} comment về server.`);
+    } catch (e) {
+        console.error("Lỗi gửi backend:", e);
     }
-
-})();
+}
