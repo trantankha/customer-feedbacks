@@ -1,9 +1,9 @@
 # backend/app/services.py
 from transformers import pipeline
 import google.generativeai as genai
-import os
+from app.core import settings
 
-GEMINI_API_KEY = "AIzaSyDpozwCrmTJBhkas7m8tXuco1k-a_ai8zY"
+GEMINI_API_KEY = settings.GEMINI_API_KEY
 
 try:
     genai.configure(api_key=GEMINI_API_KEY)
