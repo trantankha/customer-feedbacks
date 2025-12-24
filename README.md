@@ -12,12 +12,18 @@ Mục tiêu của dự án là cung cấp một giải pháp toàn diện để 
 
 ## Tính năng chính
 
-- Thu thập phản hồi tự động từ Shopee và Facebook qua extension
-- Phân tích phản hồi sử dụng AI (Google Generative AI)
-- Trực quan hóa dữ liệu với biểu đồ từ vựng và thống kê
-- Dashboard quản lý phản hồi với giao diện thân thiện
+- Thu thập phản hồi tự động từ Shopee và Facebook qua extension Chrome
+- Phân tích phản hồi sử dụng AI (PhoBERT cho cảm xúc, Google Generative AI cho chat)
+- Chatbot AI để hỏi đáp và phân tích sâu về dữ liệu phản hồi
+- Phân tích chân dung khách hàng dựa trên lịch sử tương tác
+- Trực quan hóa dữ liệu với biểu đồ từ vựng, biểu đồ phân tích và word cloud
+- Dashboard quản lý phản hồi với giao diện thân thiện, hỗ trợ làm mới và xuất báo cáo
+- Xuất báo cáo Excel với kết quả phân tích chi tiết
+- Nhập hàng loạt phản hồi từ extension với xử lý nền
+- Phân tích xu hướng cảm xúc theo thời gian
+- Quản lý hồ sơ khách hàng với phân trang
 - API RESTful cho tích hợp với các hệ thống khác
-- Hỗ trợ tải lên file Excel để nhập dữ liệu phản hồi
+- Hỗ trợ tải lên file CSV/Excel để nhập dữ liệu phản hồi theo nền tảng
 
 ## Công nghệ sử dụng
 
@@ -26,7 +32,8 @@ Mục tiêu của dự án là cung cấp một giải pháp toàn diện để 
 - **SQLAlchemy**: ORM cho cơ sở dữ liệu
 - **PostgreSQL**: Cơ sở dữ liệu chính
 - **Pandas**: Xử lý dữ liệu
-- **Google Generative AI**: Phân tích phản hồi bằng AI
+- **Google Generative AI**: Chatbot AI và phân tích chân dung khách hàng
+- **Transformers (PhoBERT)**: Phân tích cảm xúc tiếng Việt
 - **Uvicorn**: ASGI server
 
 ### Frontend
@@ -87,10 +94,13 @@ Frontend sẽ chạy tại `http://localhost:3000`
 
 ## Cách sử dụng
 
-1. **Thu thập dữ liệu**: Sử dụng extension để scrape phản hồi từ Shopee/Facebook
-2. **Xem dashboard**: Truy cập frontend để xem thống kê và danh sách phản hồi
-3. **Phân tích**: Sử dụng tính năng AI để phân tích cảm xúc và chủ đề
-4. **Xuất dữ liệu**: Tải xuống báo cáo dưới dạng Excel
+1. **Cài đặt extension**: Cài đặt extension Chrome để thu thập phản hồi từ Shopee/Facebook
+2. **Thu thập dữ liệu**: Sử dụng extension để scrape phản hồi và gửi về hệ thống tự động
+3. **Xem dashboard**: Truy cập frontend để xem thống kê, biểu đồ phân tích và danh sách phản hồi
+4. **Phân tích AI**: Sử dụng chatbot để hỏi đáp về dữ liệu, hoặc phân tích chân dung khách hàng
+5. **Quản lý khách hàng**: Xem hồ sơ khách hàng và xu hướng tương tác
+6. **Xuất báo cáo**: Tải xuống báo cáo Excel với kết quả phân tích chi tiết
+7. **Tải lên dữ liệu**: Upload file CSV/Excel để nhập phản hồi theo nền tảng cụ thể
 
 ## API Documentation
 
@@ -98,9 +108,17 @@ API được cung cấp qua FastAPI với documentation tự động tại `/doc
 
 Các endpoint chính:
 - `GET /api/v1/feedbacks`: Lấy danh sách phản hồi
-- `POST /api/v1/feedbacks`: Tạo phản hồi mới
-- `POST /api/v1/upload`: Tải lên file Excel
-- `GET /api/v1/analytics`: Lấy dữ liệu phân tích
+- `POST /api/v1/feedbacks/test-create`: Tạo phản hồi mới (test)
+- `POST /api/v1/feedbacks/upload-csv`: Tải lên file CSV theo nền tảng
+- `POST /api/v1/feedbacks/batch-import`: Nhập hàng loạt từ extension
+- `PUT /api/v1/feedbacks/{id}/analysis`: Cập nhật kết quả phân tích
+- `GET /api/v1/feedbacks/export`: Xuất báo cáo Excel
+- `GET /api/v1/dashboard/stats`: Lấy thống kê dashboard
+- `GET /api/v1/dashboard/keywords`: Lấy từ khóa nổi bật
+- `GET /api/v1/dashboard/trend`: Lấy xu hướng cảm xúc
+- `GET /api/v1/customers`: Lấy danh sách khách hàng (phân trang)
+- `POST /api/v1/customers/analyze-profile`: Phân tích chân dung khách hàng
+- `POST /api/v1/chat/ask`: Hỏi đáp với AI về dữ liệu phản hồi
 
 ## Đóng góp
 

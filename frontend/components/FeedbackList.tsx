@@ -97,8 +97,8 @@ export default function FeedbackList() {
                                             <option value="NEGATIVE">TIÊU CỰC</option>
                                             <option value="NEUTRAL">TRUNG TÍNH</option>
                                         </select>
-                                        <button onClick={() => saveEdit(item.id)} className="p-1 text-green-600 hover:bg-green-100 rounded"><Check size={14} /></button>
-                                        <button onClick={cancelEdit} className="p-1 text-red-600 hover:bg-red-100 rounded"><X size={14} /></button>
+                                        <button onClick={() => saveEdit(item.id)} className="p-1 text-green-600 hover:bg-green-100 rounded cursor-pointer"><Check size={14} /></button>
+                                        <button onClick={cancelEdit} className="p-1 text-red-600 hover:bg-red-100 rounded cursor-pointer"><X size={14} /></button>
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-2">
@@ -107,7 +107,7 @@ export default function FeedbackList() {
                                                 item.analysis?.sentiment_label === 'NEGATIVE' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-gray-50 text-gray-700 border-gray-200'}`}>
                                             {item.analysis?.sentiment_label || 'CHƯA XỬ LÝ'}
                                         </span>
-                                        <button onClick={() => startEdit(item)} className="text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onClick={() => startEdit(item)} className="text-gray-400 cursor-pointer hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Edit2 size={12} />
                                         </button>
                                     </div>
