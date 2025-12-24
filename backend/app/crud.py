@@ -240,7 +240,7 @@ def get_customer_profiles(db: Session, skip: int = 0, limit: int = 10):
 
         data.append({
             "name": name,
-            "source": f.customer_info.get("imported_from"),
+            "source_id": f.source_id,
             "score": f.analysis.sentiment_score if f.analysis else 0,
             "label": f.analysis.sentiment_label if f.analysis else "NEUTRAL",
             "date": f.received_at
@@ -251,9 +251,9 @@ def get_customer_profiles(db: Session, skip: int = 0, limit: int = 10):
     # 3. Gom nhóm theo Tên (Group By)
     profiles = []
     # Group by Name và Source (để tránh trùng tên nhưng khác nguồn)
-    grouped = df.groupby(['name', 'source'])
+    grouped = df.groupby(['name', 'source_id'])
 
-    for (name, source), group in grouped:
+    for (name, source_id), group in grouped:
         total = len(group)
         # Tính tỷ lệ tích cực
         pos_count = len(group[group['label'] == 'POSITIVE'])
@@ -269,7 +269,7 @@ def get_customer_profiles(db: Session, skip: int = 0, limit: int = 10):
 
         profiles.append({
             "name": name,
-            "source": str(source),
+            "source_id": source_id,
             "total_comments": total,
             "positive_ratio": pos_ratio,
             "avg_score": avg_score,

@@ -33,7 +33,7 @@ class AnalysisUpdate(BaseModel):
 
 class CustomerProfile(BaseModel):
     name: str
-    source: str
+    source_id: int
     total_comments: int
     positive_ratio: float # Tỷ lệ tích cực (0.0 -> 1.0)
     avg_score: float

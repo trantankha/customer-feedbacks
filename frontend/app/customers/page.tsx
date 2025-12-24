@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { User, ShoppingBag, Facebook, Star, X, Sparkles, Loader2 } from 'lucide-react';
+import { User, ShoppingBag, Facebook, Star, X, Sparkles, Loader2, Globe } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 export default function CustomersPage() {
@@ -90,13 +90,17 @@ export default function CustomersPage() {
                                         {c.name}
                                     </td>
                                     <td className="p-4">
-                                        {c.source.includes('Facebook') ? (
+                                        {c.source_id === 1 ? (
                                             <span className="flex items-center gap-1 text-blue-700 bg-blue-100 px-2 py-1 rounded text-xs w-fit">
                                                 <Facebook size={12} /> Facebook
                                             </span>
-                                        ) : (
+                                        ) : c.source_id === 2 ? (
                                             <span className="flex items-center gap-1 text-orange-700 bg-orange-100 px-2 py-1 rounded text-xs w-fit">
                                                 <ShoppingBag size={12} /> Shopee
+                                            </span>
+                                        ) : (
+                                            <span className="flex items-center gap-1 text-gray-700 bg-gray-100 px-2 py-1 rounded text-xs w-fit">
+                                                <Globe size={12} /> Khác
                                             </span>
                                         )}
                                     </td>
@@ -141,7 +145,7 @@ export default function CustomersPage() {
                             <button
                                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                 disabled={currentPage === 1}
-                                className="px-3 cursor-pointẻ text-black py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 cursor-pointer text-black py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Trước
                             </button>

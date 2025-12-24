@@ -49,7 +49,7 @@ export default function Home() {
           <div className="flex gap-3">
             <button
               onClick={handleRefresh}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-all font-medium shadow-sm"
+              className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-all font-medium shadow-sm"
             >
               <RefreshCw size={16} /> Làm mới
             </button>
@@ -57,7 +57,7 @@ export default function Home() {
             <button
               onClick={handleExport}
               disabled={isExporting}
-              className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-5 py-2 rounded-lg font-medium shadow-md transition-all active:scale-95"
+              className="flex cursor-pointer items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-5 py-2 rounded-lg font-medium shadow-md transition-all active:scale-95"
             >
               {isExporting ? 'Đang xuất...' : (
                 <>

@@ -7,10 +7,10 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recha
 
 // Định nghĩa màu sắc cho biểu đồ
 const COLORS = {
-    POSITIVE: '#16a34a', // Xanh lá
-    NEGATIVE: '#dc2626', // Đỏ
-    NEUTRAL: '#ca8a04',  // Vàng
-    MIXED: '#2563eb'     // Xanh dương
+    'TÍCH CỰC': '#16a34a', // Xanh lá
+    'TIÊU CỰC': '#dc2626', // Đỏ
+    'TRUNG LẬP': '#ca8a04',  // Vàng
+    'HỖN HỢP': '#2563eb'     // Xanh dương
 };
 
 export default function DashboardStats() {
@@ -33,11 +33,19 @@ export default function DashboardStats() {
     if (loading) return <div className="text-gray-500">Đang tải số liệu...</div>;
     if (!stats) return <div className="text-red-500">Không có dữ liệu</div>;
 
+    // Mapping từ tiếng Anh sang tiếng Việt
+    const sentimentLabels: { [key: string]: string } = {
+        POSITIVE: 'TÍCH CỰC',
+        NEGATIVE: 'TIÊU CỰC',
+        NEUTRAL: 'TRUNG LẬP',
+        MIXED: 'HỖN HỢP'
+    };
+
     // Chuyển đổi dữ liệu cho Recharts
     // Backend trả về: { "POSITIVE": 10, "NEGATIVE": 5 }
-    // Cần đổi thành: [{ name: "POSITIVE", value: 10 }, ...]
+    // Cần đổi thành: [{ name: "Tích cực", value: 10 }, ...]
     const chartData = Object.keys(stats.sentiment_counts).map(key => ({
-        name: key,
+        name: sentimentLabels[key] || key,
         value: stats.sentiment_counts[key]
     }));
 
