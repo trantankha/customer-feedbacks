@@ -6,7 +6,7 @@ pydantic
 pandas
 openpyxl
 python-multipart
-google.generativeai
+google-genai
 python-dateutil
 transformers
 pydantic-settings
