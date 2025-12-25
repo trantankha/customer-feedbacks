@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from app import crud, schemas, database, services
+from app import crud, schemas, database, services, models
 from fastapi import File, UploadFile, BackgroundTasks
 from fastapi import Form
 from datetime import datetime
@@ -16,6 +16,10 @@ class ChatRequest(BaseModel):
 
 class CustomerAnalyzeRequest(BaseModel):
     name: str
+
+class MonitorRequest(BaseModel):
+    url: str
+    platform: str
 
 router = APIRouter()
 
@@ -165,38 +169,45 @@ def batch_import_feedbacks(
             
         for item in items:
             try:
-                # 1. XỬ LÝ THỜI GIAN
-                real_time = None
-                if item.created_at:
+                # 1. XỬ LÝ THỜI GIAN (Ưu tiên original_timestamp nếu có)
+                final_time = None
+                
+                # Logic parse thời gian an toàn
+                time_str_to_parse = item.original_timestamp or item.created_at
+                if time_str_to_parse:
                     try:
-                        # Extension gửi lên dạng chuỗi ISO (2025-12-23T...)
-                        # Ta convert sang object datetime của Python
-                        real_time = parser.parse(item.created_at)
+                        final_time = parser.parse(time_str_to_parse)
                     except:
-                        print(f"⚠️ Không parse được ngày: {item.created_at}")
-                        real_time = None
+                        final_time = datetime.now() # Fallback nếu lỗi format
 
-                # 2. GỌI CRUD VỚI THỜI GIAN THỰC
-                # Truyền real_time vào đây để nó lưu vào cột received_at
+                # 2. GỌI CRUD
+                # Lưu ý: Pass final_time vào để DB lưu đúng ngày khách comment
                 db_feedback = crud.create_feedback_with_analysis(
                     db, 
                     item.content, 
                     source_id=src_id, 
-                    custom_time=real_time
+                    custom_time=final_time 
                 )
                 
-                # 3. Update Metadata (Các thông tin phụ)
-                db_feedback.customer_info = {
+                # 3. CHUẨN BỊ JSON CUSTOMER INFO
+                info_data = {
                     "name": item.author_name,
                     "likes": str(item.likes),
                     "imported_from": "chrome_extension",
                     "original_url": payload.url,
-                    "original_timestamp": item.created_at # Lưu thêm vào đây để backup
+                    "original_timestamp": item.original_timestamp 
                 }
+
+                # 4. GÁN VÀO DB VÀO ÉP KIỂU DICT
+                # SQLAlchemy cần gán đè lại để nhận biết thay đổi với JSON
+                db_feedback.customer_info = info_data
+                
+                db.add(db_feedback) 
                 db.commit()
                 count += 1
             except Exception as e:
-                print(f"Lỗi dòng: {e}")
+                print(f"❌ Lỗi dòng: {e}")
+                db.rollback()
                 continue
         print(f"✅ Đã import thành công {count} dòng.")
 
@@ -206,3 +217,39 @@ def batch_import_feedbacks(
 @router.get("/dashboard/trend")
 def get_trend(days: int = 1, db: Session = Depends(database.get_db)):
     return crud.get_sentiment_trend(db, days)
+
+@router.post("/monitor", response_model=schemas.MonitorTaskResponse)
+def add_monitor_task(payload: schemas.MonitorTaskCreate, db: Session = Depends(database.get_db)):
+    # Kiểm tra trùng lặp
+    exists = db.query(models.MonitorTask).filter(models.MonitorTask.url == payload.url).first()
+    if exists:
+        # Nếu đã có thì kích hoạt lại
+        exists.is_active = True
+        db.commit()
+        db.refresh(exists)
+        return exists
+
+    new_task = models.MonitorTask(
+        url=payload.url,
+        memo=payload.memo,
+        platform=payload.platform,
+        is_active=True
+    )
+    db.add(new_task)
+    db.commit()
+    db.refresh(new_task)
+    return new_task
+
+@router.get("/monitor", response_model=List[schemas.MonitorTaskResponse])
+def get_monitor_tasks(db: Session = Depends(database.get_db)):
+    # Chỉ lấy các task đang kích hoạt để Extension chạy
+    return db.query(models.MonitorTask).filter(models.MonitorTask.is_active == True).all()
+
+@router.delete("/monitor/{task_id}")
+def delete_monitor_task(task_id: int, db: Session = Depends(database.get_db)):
+    task = db.query(models.MonitorTask).filter(models.MonitorTask.id == task_id).first()
+    if task:
+        # Xóa mềm (chỉ tắt active) hoặc xóa cứng tùy bạn. Ở đây ta xóa cứng cho gọn.
+        db.delete(task)
+        db.commit()
+    return {"message": "Đã xóa task"}
