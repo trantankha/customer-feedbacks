@@ -1,24 +1,33 @@
 {
     "manifest_version": 3,
-    "name": "FeedbackPro Scraper",
-    "version": "2.0",
-    "description": "Cào comment Shopee/Facebook và gửi về FeedbackPro",
+    "name": "FeedbackPro Ultimate (API Mode)",
+    "version": "5.0",
     "permissions": [
+        "scripting",
         "activeTab",
-        "scripting"
+        "webRequest",
+        "alarms",
+        "storage"
     ],
-    "action": {
-        "default_popup": "popup.html",
-        "default_icon": {
-            "16": "icon.png",
-            "48": "icon.png",
-            "128": "icon.png"
-        }
-    },
     "host_permissions": [
-        "http://127.0.0.1:8000/*",
-        "*://*.shopee.vn/*",
-        "*://*.facebook.com/*"
+        "<all_urls>"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "run_at": "document_start"
+        }
     ],
     "web_accessible_resources": [
         {
