@@ -1,20 +1,23 @@
 # backend/app/services.py
 from transformers import pipeline
-import google.generativeai as genai
+from google import genai
 from app.core import settings
 
 GEMINI_API_KEY = settings.GEMINI_API_KEY
 
+# --- KHỞI TẠO GEMINI CLIENT (NEW SDK) ---
 try:
-    genai.configure(api_key=GEMINI_API_KEY)
-    # Dùng model Gemini 2.5 Flash cho nhanh và rẻ (hoặc gemini-pro)
-    chat_model = genai.GenerativeModel('gemini-2.5-flash')
-    print("✅ Đã kết nối Google Gemini!")
+    if GEMINI_API_KEY:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        print("✅ Đã kết nối Google Gemini!")
+    else:
+        print("⚠️ Chưa có GEMINI_API_KEY, tính năng Chatbot sẽ bị tắt.")
+        client = None
 except Exception as e:
-    print(f"❌ Lỗi kết nối Gemini: {e}")
-    chat_model = None
+    print(f"❌ Lỗi khởi tạo Gemini Client: {e}")
+    client = None
 
-# --- KHỞI TẠO MODEL AI (CHẠY 1 LẦN KHI START SERVER) ---
+# --- KHỞI TẠO MODEL AI PHÂN TÍCH CẢM XÚC (PHOBERT) ---
 print("⏳ Đang tải Model AI phân tích cảm xúc (PhoBERT)... Vui lòng chờ!")
 try:
     # Sử dụng pipeline phân tích cảm xúc
@@ -22,12 +25,12 @@ try:
         "sentiment-analysis", 
         model="wonrax/phobert-base-vietnamese-sentiment" 
     )
-    print("✅ Model AI đã sẵn sàng!")
+    print("✅ Model PhoBERT đã sẵn sàng!")
 except Exception as e:
-    print(f"❌ Lỗi tải Model: {e}")
+    print(f"❌ Lỗi tải PhoBERT: {e}")
     sentiment_pipeline = None
 
-# 1. TỪ ĐIỂN E-COMMERCE (Shopee - Giữ nguyên cái cũ)
+# 1. TỪ ĐIỂN E-COMMERCE (Shopee - Giữ nguyên)
 ECOMMERCE_KEYWORDS = {
     # Tích cực
     "giao nhanh": "giao hàng", "đóng gói kỹ": "đóng gói", 
@@ -80,7 +83,6 @@ def analyze_text(text: str, source: str = "OTHER"):
             ai_label = label_map.get(result['label'], "NEUTRAL")
             
             # Chuẩn hóa điểm số về thang -1 đến 1
-            # Nếu POS: điểm dương, NEG: điểm âm
             prob = result['score']
             if ai_label == "POSITIVE":
                 ai_score = prob
@@ -89,31 +91,22 @@ def analyze_text(text: str, source: str = "OTHER"):
             else:
                 ai_score = 0.0
         except Exception as e:
-            print(f"Lỗi khi chạy AI: {e}")
-            # Fallback về logic cũ nếu AI lỗi
+            print(f"Lỗi khi chạy AI PhoBERT: {e}")
             pass
             
-    # --- 2. DÙNG TỪ KHÓA ĐỂ TRÍCH XUẤT TAG (KHÔNG DÙNG ĐỂ CHẤM ĐIỂM NỮA) ---
-    # Phần này giúp hiển thị lên UI: Khách khen/chê cái gì?
+    # --- 2. DÙNG TỪ KHÓA ĐỂ TRÍCH XUẤT TAG ---
     text_lower = text.lower()
     found_keywords = []
 
-    # Chọn từ điển dựa trên nguồn
     if source == "SHOPEE":
         target_dict = ECOMMERCE_KEYWORDS
     elif source == "FACEBOOK":
         target_dict = SOCIAL_KEYWORDS
     else:
-        # Nếu không rõ nguồn thì gộp cả hai (hoặc dùng cái nào tùy ý)
         target_dict = {**ECOMMERCE_KEYWORDS, **SOCIAL_KEYWORDS}
 
-    # Quét từ khóa
     for word, tag in target_dict.items():
         if word in text_lower:
-             # Logic prefix khen/chê đơn giản
-            prefix = "khen" if ai_score > 0 else "chê" if ai_score < 0 else "về"
-            
-            # Với Facebook, đôi khi chỉ cần Tag chủ đề là đủ (VD: "về quan điểm")
             if source == "FACEBOOK":
                 found_keywords.append(tag) 
             else:
@@ -129,80 +122,83 @@ def analyze_text(text: str, source: str = "OTHER"):
 
 def ask_gemini_about_data(question: str, context_data: list):
     """
-    Gửi câu hỏi + Dữ liệu tóm tắt cho Gemini trả lời
+    Gửi câu hỏi + Dữ liệu tóm tắt cho Gemini trả lời (New SDK)
     """
-    if not chat_model:
-        return "Xin lỗi, kết nối AI đang gặp sự cố."
+    if not client:
+        return "Xin lỗi, kết nối AI đang gặp sự cố hoặc chưa cấu hình API Key."
 
-    # 1. Chuẩn bị ngữ cảnh (Context)
-    # Biến list feedback thành một đoạn văn bản
+    # 1. Chuẩn bị ngữ cảnh
     data_text = ""
     for item in context_data:
-        # Format: [Tích cực] Nội dung comment...
         data_text += f"- [{item['label']}] {item['content']}\n"
 
-    # 2. Tạo Prompt (Câu lệnh cho AI)
-    # Kỹ thuật: Role-playing (Nhập vai)
+    # 2. Tạo Prompt
     prompt = f"""
     Bạn là một trợ lý phân tích dữ liệu chuyên nghiệp (Data Analyst).
-    Dưới đây là danh sách các phản hồi gần đây từ khách hàng về sản phẩm/dịch vụ:
+    Dưới đây là danh sách các phản hồi gần đây từ khách hàng:
     
     --- BẮT ĐẦU DỮ LIỆU ---
     {data_text}
     --- KẾT THÚC DỮ LIỆU ---
 
-    Dựa vào dữ liệu trên, hãy trả lời câu hỏi sau của người quản lý:
+    Dựa vào dữ liệu trên, hãy trả lời câu hỏi sau:
     "{question}"
 
     Yêu cầu:
     - Trả lời ngắn gọn, đi thẳng vào vấn đề.
-    - Dẫn chứng cụ thể (ví dụ: "Có nhiều khách phàn nàn về...").
-    - Đề xuất giải pháp nếu thấy vấn đề tiêu cực.
-    - Trả lời bằng tiếng Việt tự nhiên.
+    - Dẫn chứng cụ thể.
+    - Đề xuất giải pháp nếu cần.
     """
 
     try:
-        # 3. Gọi Gemini
-        response = chat_model.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt
+        )
         return response.text
     except Exception as e:
         return f"Lỗi khi hỏi Gemini: {e}"
     
 def analyze_customer_persona(customer_name: str, history: list):
     """
-    Dùng Gemini để dựng chân dung khách hàng
+    Dùng Gemini để dựng chân dung khách hàng (New SDK)
     """
-    if not chat_model:
+    if not client:
         return "Lỗi kết nối AI."
     
     if not history:
         return "Khách hàng này chưa có đủ dữ liệu lịch sử để phân tích."
 
-    # Biến lịch sử thành văn bản
     history_text = ""
     for h in history:
-        history_text += f"- [{h['date']}] [{h['source']}] ({h['label']}): {h['content']}\n"
+        # Xử lý an toàn nếu history item thiếu trường
+        date_str = h.get('date', 'N/A')
+        source_str = h.get('source', 'Unknown')
+        label_str = h.get('label', 'Unknown')
+        content_str = h.get('content', '') or h.get('raw_content', '')
+        
+        history_text += f"- [{date_str}] [{source_str}] ({label_str}): {content_str}\n"
 
-    # Prompt "bá đạo" để AI đóng vai chuyên gia tâm lý khách hàng
     prompt = f"""
-    Bạn là một chuyên gia CRM và Tâm lý hành vi khách hàng (Customer Behavioral Analyst).
-    Hãy phân tích khách hàng tên "{customer_name}" dựa trên lịch sử tương tác dưới đây:
+    Bạn là một chuyên gia CRM và Tâm lý hành vi khách hàng.
+    Hãy phân tích khách hàng tên "{customer_name}" dựa trên lịch sử tương tác:
 
     --- LỊCH SỬ TƯƠNG TÁC ---
     {history_text}
     --- KẾT THÚC ---
 
-    Hãy trả lời dưới dạng báo cáo ngắn gọn (Markdown) gồm các mục sau:
-    1. **Tính cách:** (Ví dụ: Dễ tính, Hay soi mói, Thích đùa, Fan cuồng, Cục súc...)
-    2. **Mối quan tâm chính:** (Họ hay nói về Giá cả? Ship? hay Chất lượng?)
-    3. **Đánh giá tiềm năng:** (Có nên chăm sóc kỹ không? Hay là khách bom hàng?)
-    4. **Lời khuyên hành động:** (Shop nên làm gì với người này? Tặng mã giảm giá hay Block?)
-
-    *Lưu ý: Giọng văn chuyên nghiệp nhưng sắc sảo, đi thẳng vào vấn đề.*
+    Hãy trả lời dưới dạng báo cáo ngắn gọn (Markdown):
+    1. **Tính cách:**
+    2. **Mối quan tâm chính:**
+    3. **Đánh giá tiềm năng:**
+    4. **Lời khuyên hành động:**
     """
 
     try:
-        response = chat_model.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt
+        )
         return response.text
     except Exception as e:
         return f"Lỗi khi gọi Gemini: {e}"
