@@ -11,7 +11,7 @@ class Source(Base):
     
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    platform = Column(String, unique=True) # Đảm bảo không trùng platform
+    platform = Column(String, unique=True)
 
 # 2. Thêm bảng Feedback
 class Feedback(Base):

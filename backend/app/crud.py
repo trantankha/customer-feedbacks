@@ -158,7 +158,7 @@ def process_csv_upload(db: Session, file_contents: bytes, platform: str = 'OTHER
         print(f"❌ Lỗi đọc file CSV: {e}")
 
 # --- Các hàm CRUD khác giữ nguyên ---
-def get_feedbacks(db: Session, skip: int = 0, limit: int = 100):
+def get_feedbacks(db: Session, skip: int = 0, limit: int = 20):
     return db.query(models.Feedback).order_by(models.Feedback.received_at.desc()).offset(skip).limit(limit).all()
 
 def get_stats(db: Session):
