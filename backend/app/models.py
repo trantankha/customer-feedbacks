@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime,Float, ARRAY
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime,Float, ARRAY, Boolean
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -37,3 +37,16 @@ class AnalysisResult(Base):
     keywords = Column(ARRAY(String))
     
     feedback = relationship("Feedback", back_populates="analysis")
+
+class MonitorTask(Base):
+    __tablename__ = "monitor_tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    url = Column(String, nullable=False)
+    platform = Column(String) # FACEBOOK / TIKTOK
+    status = Column(String, default="ACTIVE") # ACTIVE, PAUSED, ERROR
+    memo = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    last_checked_at = Column(DateTime, nullable=True)
+    last_comment_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=func.now())
