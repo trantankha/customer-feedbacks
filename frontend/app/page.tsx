@@ -6,8 +6,9 @@ import FeedbackList from '@/components/FeedbackList';
 import UploadArea from '@/components/UploadArea';
 import WordCloudChart from '@/components/WordCloudChart';
 import AnalyticsCharts from '@/components/AnalyticsCharts';
+import MonitorManager from '@/components/MonitorManager'; // ✅ Đã thêm Component mới
 import api from '@/lib/api';
-import { Download, RefreshCw } from 'lucide-react';
+import { Download, RefreshCw, LayoutDashboard } from 'lucide-react';
 
 export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -36,75 +37,110 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50/50 p-6 md:p-8"> {/* Nền màu Slate nhẹ nhàng hơn */}
-      <div className="max-w-7xl mx-auto space-y-8">
+    // NỀN TỐI CHỦ ĐẠO (Dark Mode Base)
+    <main className="min-h-screen bg-[#0f1115] text-gray-300 font-sans selection:bg-purple-500/30">
 
-        {/* --- HEADER --- */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Analytics Dashboard</h1>
-            <p className="text-slate-500 mt-1">Giám sát & Phân tích phản hồi khách hàng đa kênh</p>
+      {/* --- HEADER --- */}
+      <div className="border-b border-gray-800 bg-[#16181d]/80 backdrop-blur-md sticky top-0 z-30">
+        <div className="max-w-[1600px] mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-600 rounded-lg shadow-lg shadow-purple-900/50">
+              <LayoutDashboard size={20} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white tracking-tight">FeedbackPro AI</h1>
+              <p className="text-[10px] text-gray-500 font-medium uppercase tracking-widest">Real-time Analytics</p>
+            </div>
           </div>
 
           <div className="flex gap-3">
             <button
               onClick={handleRefresh}
-              className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-all font-medium shadow-sm"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#252525] border border-gray-700 text-gray-300 text-sm rounded-lg hover:border-purple-500 hover:text-white transition-all shadow-sm active:scale-95"
             >
-              <RefreshCw size={16} /> Làm mới
+              <RefreshCw size={14} /> <span>Làm mới</span>
             </button>
 
             <button
               onClick={handleExport}
               disabled={isExporting}
-              className="flex cursor-pointer items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-5 py-2 rounded-lg font-medium shadow-md transition-all active:scale-95"
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm px-4 py-1.5 rounded-lg font-bold shadow-lg shadow-emerald-900/20 transition-all active:scale-95 disabled:opacity-70"
             >
               {isExporting ? 'Đang xuất...' : (
                 <>
-                  <Download size={18} /> Xuất Báo cáo
+                  <Download size={16} /> Xuất Báo cáo
                 </>
               )}
             </button>
           </div>
         </div>
+      </div>
 
-        {/* --- KHU VỰC STATS & UPLOAD --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Upload Area chiếm 1 phần hoặc để riêng tùy layout cũ của bạn */}
-          <div className="lg:col-span-4">
-            <UploadArea onUploadSuccess={handleRefresh} />
-          </div>
+      <div className="max-w-[1600px] mx-auto p-6 md:p-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-          <div className="lg:col-span-4">
-            <DashboardStats key={`stats-${refreshKey}`} />
-          </div>
+          {/* === CỘT TRÁI (STICKY): CÔNG CỤ & ĐIỀU KHIỂN (Chiếm 4/12) === */}
+          <div className="lg:col-span-4 sticky top-24 space-y-6">
 
-          <div className="lg:col-span-4">
-            <AnalyticsCharts />
-          </div>
-        </div>
-
-        {/* --- KHU VỰC CHÍNH (MAIN LAYOUT) --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative">
-
-          {/* CỘT TRÁI: Word Cloud (Sticky) - Chiếm 4/12 phần */}
-          <div className="lg:col-span-4 sticky top-24 space-y-6 z-10">
-            {/* Bạn có thể thêm các Chart nhỏ khác vào đây nếu muốn */}
-            <WordCloudChart key={`cloud-${refreshKey}`} />
-
-            {/* Ví dụ: Một cái Card nhỏ quảng cáo tính năng AI */}
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-6 text-white shadow-lg">
-              <h3 className="font-bold text-lg mb-2">💡 Mẹo phân tích</h3>
-              <p className="text-blue-100 text-sm mb-4">Sử dụng Chatbot ở góc phải để hỏi chi tiết về các từ khóa đang nổi bật.</p>
-              <div className="w-full h-1 bg-white/20 rounded-full">
-                <div className="w-2/3 h-full bg-white rounded-full"></div>
+            {/* 1. Nhập liệu (Upload) - Gọn gàng hơn */}
+            <div className="bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-gray-800 bg-[#202020] flex justify-between items-center">
+                <h3 className="font-bold text-gray-200 text-sm">📥 Nhập dữ liệu thủ công</h3>
+                <span className="text-[10px] bg-gray-700 px-2 py-0.5 rounded text-gray-300">File CSV/Excel</span>
+              </div>
+              <div className="p-4">
+                <UploadArea onUploadSuccess={handleRefresh} />
               </div>
             </div>
+
+            {/* 2. Monitor Manager (GIÁM SÁT TỰ ĐỘNG) - Vị trí "Vàng" */}
+            <div className="h-[420px]"> {/* Set chiều cao cố định cho đẹp */}
+              <MonitorManager />
+            </div>
+
+            {/* 3. Word Cloud - Đẩy xuống dưới cùng */}
+            <div className="bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-sm p-5">
+              <h3 className="font-bold text-gray-200 text-sm mb-4">☁️ Từ khóa nổi bật</h3>
+              <div className="min-h-[200px]">
+                <WordCloudChart key={`cloud-${refreshKey}`} />
+              </div>
+            </div>
+
           </div>
 
-          {/* CỘT PHẢI: Danh sách phản hồi - Chiếm 8/12 phần */}
-          <div className="lg:col-span-8 min-h-screen">
-            <FeedbackList key={`list-${refreshKey}`} />
+
+          {/* === CỘT PHẢI: HIỂN THỊ DỮ LIỆU (Chiếm 8/12) === */}
+          <div className="lg:col-span-8 space-y-6">
+
+            {/* 1. Stats Cards (Thống kê) */}
+            <DashboardStats key={`stats-${refreshKey}`} />
+
+            {/* 2. Biểu đồ phân tích (Analytics Chart) */}
+            <div className="bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-sm p-1">
+              <div className="px-5 py-4 border-b border-gray-800 flex justify-between items-center">
+                <div>
+                  <h3 className="font-bold text-white text-lg">Xu hướng Cảm xúc</h3>
+                  <p className="text-gray-500 text-xs">Biến động chỉ số theo thời gian thực</p>
+                </div>
+              </div>
+              <div className="p-4">
+                <AnalyticsCharts key={`list-${refreshKey}`} />
+              </div>
+            </div>
+
+            {/* 3. Danh sách phản hồi (Feedback List) */}
+            <div className="bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-sm min-h-[600px] flex flex-col">
+              <div className="px-5 py-4 border-b border-gray-800 flex justify-between items-center sticky top-0 bg-[#1a1a1a] z-10 rounded-t-xl">
+                <div>
+                  <h3 className="font-bold text-white text-lg">Dữ liệu chi tiết</h3>
+                  <p className="text-gray-500 text-xs">Danh sách phản hồi từ Facebook & Shopee</p>
+                </div>
+              </div>
+              <div className="flex-1 p-0">
+                <FeedbackList key={`list-${refreshKey}`} />
+              </div>
+            </div>
+
           </div>
 
         </div>

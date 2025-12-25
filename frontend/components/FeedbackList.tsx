@@ -73,9 +73,9 @@ export default function FeedbackList() {
     };
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border h-full overflow-hidden flex flex-col">
-            <h3 className="font-semibold mb-4 text-gray-700 flex justify-between items-center">
-                Phản hồi gần đây (Real-time)
+        <div className="bg-white p-6 shadow-sm h-full overflow-hidden flex flex-col">
+            <h3 className="font-semibold mb-2 text-gray-700 flex justify-between items-center">
+                Phản hồi gần đây
                 <button onClick={fetchFeedbacks} className="text-xs cursor-pointer text-blue-500 hover:underline">Làm mới ngay</button>
             </h3>
 

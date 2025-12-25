@@ -67,7 +67,7 @@ export default function DashboardStats() {
             </div>
 
             {/* 2. Phần Biểu đồ */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border h-96">
+            <div className="bg-[#1a1a1a] rounded-xl p-6 shadow-sm border border-gray-800 h-96">
                 <h3 className="font-semibold mb-4 text-gray-700">Tỷ lệ Cảm xúc</h3>
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -96,7 +96,7 @@ export default function DashboardStats() {
 // Component con hiển thị thẻ nhỏ
 function StatCard({ title, value, color }: { title: string, value: number, color: string }) {
     return (
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+        <div className="bg-[#1a1a1a] p-6 rounded-xl border border-gray-800 shadow-sm">
             <h3 className="text-gray-500 text-sm font-medium">{title}</h3>
             <p className={`text-3xl font-bold mt-2 ${color}`}>{value}</p>
         </div>

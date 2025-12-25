@@ -24,7 +24,7 @@ class MonitorRequest(BaseModel):
 router = APIRouter()
 
 @router.get("/feedbacks", response_model=List[schemas.FeedbackResponse])
-def read_feedbacks(skip: int = 0, limit: int = 20, db: Session = Depends(database.get_db)):
+def read_feedbacks(skip: int = 0, limit: int = 10, db: Session = Depends(database.get_db)):
     return crud.get_feedbacks(db, skip, limit)
 
 @router.get("/dashboard/stats", response_model=schemas.DashboardStats)

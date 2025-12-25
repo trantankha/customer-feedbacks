@@ -1,33 +1,48 @@
-const BACKEND_IMPORT_URL = "http://127.0.0.1:8000/api/v1/feedbacks/batch-import";
+// content.js - CONFLICT FREE
 
-// --- TIÊM INJECT.JS ---
+// --- 1. TIÊM INJECT.JS (Bắt buộc cho Shopee) ---
 const s = document.createElement('script');
 s.src = chrome.runtime.getURL('inject.js');
 s.onload = function () { this.remove(); };
 (document.head || document.documentElement).appendChild(s);
 
-console.log("🔥 [Content] Logic thời gian: Chỉ lấy ngày cụ thể, còn lại là NOW.");
+console.log("🔥 [Content] Sẵn sàng nhận lệnh.");
 
+// Biến lưu trữ tạm
 let collectedItems = [];
-let isRunning = false;
+let isAutoRunning = false; // Cờ đánh dấu đang chạy tự động
 
-// --- 1. LẮNG NGHE LỆNH ---
+// --- 2. LẮNG NGHE MESSAGES ---
 chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
+
+    // CASE 1: LỆNH TỰ ĐỘNG TỪ BACKGROUND (AUTO)
     if (req.action === "AUTO_SCROLL_START") {
-        if (isRunning) return;
-        isRunning = true;
-        collectedItems = [];
-        startHybridProcess(req.platform);
+        if (isAutoRunning) return; // Đang chạy rồi thì thôi
+
+        console.log(`🤖 [Auto] Nhận lệnh tuần tra ${req.platform}...`);
+        isAutoRunning = true;
+        collectedItems = []; // Quan trọng: Reset kho để không dính dữ liệu cũ
+
+        startAutoScrollProcess(req.platform);
     }
+
+    // CASE 2: LỆNH THỦ CÔNG TỪ POPUP (MANUAL)
     if (req.action === "FORCE_SCRAPE_NOW") {
-        console.log("👆 Thủ công kích hoạt.");
-        if (window.location.href.includes("facebook")) scrapeFacebookDOM();
+        console.log("👆 [Manual] Kích hoạt chế độ thủ công.");
+
+        // Nếu là Facebook, quét lại DOM một lần nữa cho chắc
+        if (window.location.href.includes("facebook")) {
+            scrapeFacebookDOM();
+        }
+
+        // Gửi ngay lập tức những gì đang có
         finalizeAndSend(true);
         sendResponse({ status: "Processing" });
     }
 });
 
-// --- 2. NHẬN DATA SHOPEE (API INTERCEPTOR) ---
+// --- 3. LẮNG NGHE DỮ LIỆU TỪ INJECT.JS (SHOPEE API) ---
+// Đây là lắng nghe thụ động, nó hoạt động cho cả Thủ công và Tự động
 window.addEventListener("message", (event) => {
     if (event.source !== window || event.data.source !== "FEEDBACK_INTERCEPTOR") return;
     const { payload, platform } = event.data;
@@ -35,7 +50,7 @@ window.addEventListener("message", (event) => {
     if (platform === "SHOPEE" && Array.isArray(payload)) {
         payload.forEach(r => {
             if (r.comment && r.comment.trim().length > 0) {
-                // Shopee luôn trả về Unix Timestamp (Ngày cụ thể) -> Lấy luôn
+                // Logic lấy thời gian chuẩn xác từ Shopee
                 let specificTime = null;
                 if (r.ctime) {
                     specificTime = new Date(r.ctime * 1000).toISOString();
@@ -44,27 +59,89 @@ window.addEventListener("message", (event) => {
                 collectedItems.push({
                     author_name: r.author_username || "Shopee User",
                     content: r.comment,
-                    original_timestamp: specificTime, // Luôn chính xác
+                    original_timestamp: specificTime,
                     source_platform: "SHOPEE",
                     likes: 0
                 });
             }
         });
-        console.log(`📦 [Shopee] Đã lấy ${collectedItems.length} review.`);
+        console.log(`📦 [Shopee] Đã bắt được ${collectedItems.length} review.`);
     }
 });
 
-// --- 3. FACEBOOK DOM SCRAPER (LOGIC ĐƠN GIẢN) ---
-function scrapeFacebookDOM() {
-    console.log("🔎 [Facebook] Đang quét...");
+// --- 4. LOGIC CUỘN TỰ ĐỘNG (CHỈ DÙNG CHO AUTO) ---
+function startAutoScrollProcess(platform) {
+    let count = 0;
+    const maxScrolls = 15; // Cuộn 15 lần (khoảng 20s)
 
+    const timer = setInterval(() => {
+        count++;
+        window.scrollBy(0, 800); // Cuộn xuống
+
+        // Fix lỗi Shopee: Nút "Tất cả" đôi khi chưa được bấm
+        if (platform === "SHOPEE" && count === 2) {
+            const btn = document.querySelector('.product-rating-overview__filter--all');
+            if (btn) btn.click();
+        }
+
+        // Fix lỗi Facebook: Cần cào DOM liên tục vì nó render dần dần
+        if (platform === "FACEBOOK") {
+            clickFacebookButtons();
+            scrapeFacebookDOM();
+        }
+
+        // ĐIỀU KIỆN DỪNG
+        if (count >= maxScrolls) {
+            clearInterval(timer);
+            console.log("🛑 [Auto] Hoàn thành cuộn. Gửi dữ liệu...");
+            finalizeAndSend(false); // Gửi đi
+            isAutoRunning = false; // Reset cờ
+        }
+    }, 1500);
+}
+
+// --- 5. HÀM GỬI DỮ LIỆU CHUNG (CORE) ---
+function finalizeAndSend(isManual = false) {
+    if (collectedItems.length === 0) {
+        console.warn("⚠️ Kho rỗng. Không có gì để gửi.");
+        if (isManual) alert("Chưa thu thập được dữ liệu nào! Hãy cuộn trang thêm chút nữa.");
+        return;
+    }
+
+    // Lọc trùng lặp ngay tại Client để giảm tải cho Server
+    const unique = collectedItems.filter((v, i, a) => a.findIndex(v2 => (v2.content === v.content)) === i);
+    const url = window.location.href;
+
+    console.log(`🚀 Đang gửi ${unique.length} dòng về Background...`);
+
+    // Gửi qua Background (Proxy)
+    chrome.runtime.sendMessage({
+        action: "SEND_DATA_TO_BACKEND",
+        payload: { url: url, items: unique }
+    }, (response) => {
+        if (response && response.success) {
+            console.log("✅ Gửi thành công!");
+            // Báo cho Popup biết nếu đang mở
+            chrome.runtime.sendMessage({ action: "SCRAPE_DONE", count: unique.length });
+
+            // QUAN TRỌNG: Sau khi gửi xong thì xả kho để tránh gửi trùng lần sau
+            collectedItems = [];
+        } else {
+            console.error("❌ Gửi thất bại.");
+        }
+    });
+}
+
+// --- 6. CÁC HÀM BỔ TRỢ (HELPER) ---
+
+function scrapeFacebookDOM() {
+    // Logic cào Facebook DOM (như cũ)
     let divs = document.querySelectorAll('div[dir="auto"]');
     if (divs.length < 2) divs = document.querySelectorAll('div[role="article"] div[dir="auto"]');
 
     divs.forEach(div => {
         const text = div.innerText;
         if (text && text.length > 2) {
-            // Lọc rác
             if (["Thích", "Phản hồi", "Xem thêm", "Viết bình luận...", "Top fan"].some(k => text.includes(k))) return;
 
             const article = div.closest('div[role="article"]') || div.closest('li');
@@ -72,26 +149,18 @@ function scrapeFacebookDOM() {
             let rawTimeStr = "";
 
             if (article) {
-                // Lấy tên
                 const authorEl = article.querySelector('span > a > span') || article.querySelector('strong span');
                 if (authorEl) author = authorEl.innerText;
 
-                // Lấy chuỗi thời gian thô (để kiểm tra xem có ngày cụ thể không)
+                // Tìm ngày tháng
                 const links = article.querySelectorAll('a');
                 for (let link of links) {
-                    if (link.innerText && link.innerText.length < 25 && link.innerText !== author) {
-                        // Tìm các thẻ chứa số (ngày/giờ)
-                        if (/\d/.test(link.innerText)) {
-                            rawTimeStr = link.innerText;
-                            break;
-                        }
+                    if (link.innerText && /\d/.test(link.innerText) && link.innerText.length < 25) {
+                        rawTimeStr = link.innerText;
+                        break;
                     }
                 }
             }
-
-            // --- QUY TẮC THỜI GIAN MỚI ---
-            // 1. Cố gắng parse ngày cụ thể (VD: 20/10/2023)
-            // 2. Nếu không ra -> Lấy giờ hiện tại (Now)
 
             const finalTime = parseStrictDate(rawTimeStr) || new Date().toISOString();
 
@@ -106,95 +175,6 @@ function scrapeFacebookDOM() {
     });
 }
 
-// --- 4. HÀM PARSE NGÀY CỤ THỂ (STRICT MODE) ---
-function parseStrictDate(str) {
-    if (!str) return null;
-    const s = str.toLowerCase().trim();
-    const now = new Date();
-
-    try {
-        // Regex bắt dạng: 20/10, 20/10/2023, 20 tháng 10, 20 thg 10
-        // Group 1: Ngày, Group 2: Tháng, Group 3: Năm (Optional)
-        const regex = /(\d{1,2})[\/\s\.-]+(?:tháng|thg)?[\/\s\.-]*(\d{1,2})(?:[\/\s\.-]+(\d{4}))?/;
-        const match = s.match(regex);
-
-        if (match) {
-            const day = parseInt(match[1]);
-            const month = parseInt(match[2]) - 1; // Tháng JS từ 0-11
-            let year = now.getFullYear();
-
-            if (match[3]) {
-                year = parseInt(match[3]); // Nếu có năm cụ thể
-            } else {
-                // Nếu không có năm (VD: 20/10), mà ngày này > ngày hiện tại -> Suy ra là năm ngoái
-                const tempDate = new Date(year, month, day);
-                if (tempDate > now) year -= 1;
-            }
-
-            return new Date(year, month, day).toISOString();
-        }
-    } catch (e) {
-        return null;
-    }
-
-    return null; // Các trường hợp: "1 giờ trước", "Hôm qua" sẽ rơi vào đây -> Null -> Fallback về NOW
-}
-
-// --- HÀM GỬI DỮ LIỆU (ĐÃ SỬA ĐỔI) ---
-function finalizeAndSend(isManual = false) {
-    if (collectedItems.length === 0) {
-        console.warn("⚠️ Kho rỗng.");
-        if (isManual) alert("Chưa có dữ liệu mới để gửi!");
-        isRunning = false;
-        return;
-    }
-
-    // Lọc trùng
-    const unique = collectedItems.filter((v, i, a) => a.findIndex(v2 => (v2.content === v.content)) === i);
-    const url = window.location.href;
-
-    console.log(`🚀 Đang chuyển ${unique.length} dòng cho Background xử lý...`);
-
-    // GỬI TIN NHẮN CHO BACKGROUND (Thay vì fetch trực tiếp)
-    chrome.runtime.sendMessage({
-        action: "SEND_DATA_TO_BACKEND",
-        payload: { url: url, items: unique }
-    }, (response) => {
-        if (response && response.success) {
-            console.log("✅ Background báo: Gửi thành công!");
-            chrome.runtime.sendMessage({ action: "SCRAPE_DONE", count: unique.length });
-            collectedItems = []; // Xả kho
-        } else {
-            console.error("❌ Background báo: Gửi thất bại.");
-            chrome.runtime.sendMessage({ action: "SCRAPE_ERROR", message: "Lỗi kết nối Backend" });
-        }
-    });
-
-    isRunning = false;
-}
-
-function startHybridProcess(platform) {
-    let attempts = 0;
-    const max = 15;
-    const timer = setInterval(() => {
-        attempts++;
-        window.scrollBy(0, 800);
-        if (platform === "SHOPEE" && attempts === 2) {
-            const btn = document.querySelector('.product-rating-overview__filter--all');
-            if (btn) btn.click();
-        }
-        if (platform === "FACEBOOK") {
-            clickFacebookButtons();
-            scrapeFacebookDOM();
-        }
-        if (attempts >= max) {
-            clearInterval(timer);
-            console.log("🛑 Dừng cuộn. Gửi hàng...");
-            finalizeAndSend(false);
-        }
-    }, 1500);
-}
-
 function clickFacebookButtons() {
     const keys = ["xem thêm", "bình luận", "phù hợp nhất", "tất cả"];
     document.querySelectorAll('div[role="button"], span').forEach(el => {
@@ -202,4 +182,26 @@ function clickFacebookButtons() {
             try { el.click(); } catch (e) { }
         }
     });
+}
+
+function parseStrictDate(str) {
+    // Hàm parse ngày như cũ
+    if (!str) return null;
+    const s = str.toLowerCase().trim();
+    const now = new Date();
+    try {
+        const regex = /(\d{1,2})[\/\s\.-]+(?:tháng|thg)?[\/\s\.-]*(\d{1,2})(?:[\/\s\.-]+(\d{4}))?/;
+        const match = s.match(regex);
+        if (match) {
+            const day = parseInt(match[1]);
+            const month = parseInt(match[2]) - 1;
+            let year = match[3] ? parseInt(match[3]) : now.getFullYear();
+            if (!match[3]) {
+                const tempDate = new Date(year, month, day);
+                if (tempDate > now) year -= 1;
+            }
+            return new Date(year, month, day).toISOString();
+        }
+    } catch (e) { return null; }
+    return null;
 }

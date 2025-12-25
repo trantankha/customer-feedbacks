@@ -6,15 +6,15 @@ import {
     Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler
 } from 'chart.js';
 import { Line, Doughnut } from 'react-chartjs-2';
-import { TrendingUp, PieChart, Calendar, FilterX } from 'lucide-react';
+import { TrendingUp, Calendar, FilterX } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler);
 
 export default function AnalyticsCharts() {
     const [trendData, setTrendData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    // State quản lý khoảng thời gian (Mặc định 7 ngày)
-    const [days, setDays] = useState(7);
+    // State quản lý khoảng thời gian (Mặc định 30 ngày)
+    const [days, setDays] = useState(30);
 
     useEffect(() => {
         setLoading(true);
