@@ -1,3 +1,4 @@
+import os
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -16,8 +17,13 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     
     # Gọi hàm gieo dữ liệu (Bạn có thể comment dòng này nếu không muốn chạy)
-    init_source_data() 
-    
+    init_source_data()
+
+    # Kiểm tra và tạo thư mục tmp nếu chưa có
+    if not os.path.exists('tmp'):
+        os.makedirs('tmp')
+        print("--- 📁 Created tmp directory ---")
+
     yield # Server chạy tại đây
     
     # --- Code chạy khi Server TẮT (Cleanup) ---
