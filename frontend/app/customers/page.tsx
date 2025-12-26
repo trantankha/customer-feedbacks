@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import api from '@/lib/api';
-import { User, ShoppingBag, Facebook, Star, X, Sparkles, Loader2, Globe } from 'lucide-react';
+import { User, ShoppingBag, Facebook, Star, X, Sparkles, Loader2, Globe, LayoutDashboard, Users } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 export default function CustomersPage() {
+    const pathname = usePathname();
     const [customers, setCustomers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
@@ -59,18 +62,18 @@ export default function CustomersPage() {
     };
 
     return (
-        <main className="min-h-screen bg-gray-50 p-8">
-            <div className="max-w-7xl mx-auto">
-                <h1 className="text-3xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+        <main className="min-h-screen bg-[#0f1115] text-gray-300 font-sans">
+            <div className="max-w-7xl mx-auto p-8">
+                <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
                     <User className="text-blue-600" />
                     Hồ sơ Khách hàng (CRM)
                 </h1>
-                <p className="mb-6 text-gray-500">Bấm vào tên khách hàng để xem phân tích chuyên sâu từ AI.</p>
+                <p className="mb-6 text-gray-500">Bấm vào hành động để xem phân tích chuyên sâu từ AI.</p>
 
                 {/* Bảng dữ liệu */}
-                <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                    <table className="w-full text-left text-sm text-gray-600">
-                        <thead className="bg-gray-100 text-gray-700 uppercase font-semibold">
+                <div className="bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-sm overflow-hidden">
+                    <table className="w-full text-left text-sm text-gray-300">
+                        <thead className="bg-[#202020] text-gray-200 uppercase font-semibold">
                             <tr>
                                 <th className="p-4">Khách hàng</th>
                                 <th className="p-4">Nguồn</th>
@@ -81,54 +84,75 @@ export default function CustomersPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {customers.map((c, idx) => (
-                                <tr key={idx} className="hover:bg-blue-50 transition-colors group">
-                                    <td className="p-4 font-medium text-gray-900 flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold shadow-sm">
-                                            {c.name.charAt(0).toUpperCase()}
+                            {customers.length === 0 && !loading ? (
+                                <tr>
+                                    <td colSpan={6} className="p-12 text-center">
+                                        <div className="flex flex-col items-center justify-center space-y-4">
+                                            <Users size={64} className="text-gray-400" />
+                                            <h3 className="text-lg font-semibold text-gray-200">Chưa có dữ liệu khách hàng</h3>
+                                            <p className="text-gray-500 max-w-md">
+                                                Bắt đầu bằng cách tải lên dữ liệu phản hồi từ khách hàng để phân tích và quản lý hồ sơ CRM chuyên nghiệp.
+                                            </p>
+                                            <Link
+                                                href="/"
+                                                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                                            >
+                                                <LayoutDashboard size={16} />
+                                                Quay về Trang chủ
+                                            </Link>
                                         </div>
-                                        {c.name}
-                                    </td>
-                                    <td className="p-4">
-                                        {c.source_id === 1 ? (
-                                            <span className="flex items-center gap-1 text-blue-700 bg-blue-100 px-2 py-1 rounded text-xs w-fit">
-                                                <Facebook size={12} /> Facebook
-                                            </span>
-                                        ) : c.source_id === 2 ? (
-                                            <span className="flex items-center gap-1 text-orange-700 bg-orange-100 px-2 py-1 rounded text-xs w-fit">
-                                                <ShoppingBag size={12} /> Shopee
-                                            </span>
-                                        ) : (
-                                            <span className="flex items-center gap-1 text-gray-700 bg-gray-100 px-2 py-1 rounded text-xs w-fit">
-                                                <Globe size={12} /> Khác
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="p-4 text-center font-bold">{c.total_comments}</td>
-                                    <td className="p-4 text-center">
-                                        <div className="flex items-center justify-center gap-1">
-                                            <Star size={14} className={c.avg_score > 0 ? "text-yellow-500 fill-yellow-500" : "text-gray-300"} />
-                                            {c.avg_score}
-                                        </div>
-                                    </td>
-                                    <td className="p-4">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${c.sentiment_trend === 'Fan cứng' ? 'bg-green-100 text-green-700' :
-                                            c.sentiment_trend === 'Khó tính' ? 'bg-red-100 text-red-700' :
-                                                'bg-gray-100 text-gray-600'
-                                            }`}>
-                                            {c.sentiment_trend}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <button
-                                            onClick={() => handleAnalyzeClick(c.name)}
-                                            className="bg-white cursor-pointer border border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all shadow-sm flex items-center gap-1 mx-auto"
-                                        >
-                                            <Sparkles size={14} /> AI Soi
-                                        </button>
                                     </td>
                                 </tr>
-                            ))}
+                            ) : (
+                                customers.map((c, idx) => (
+                                    <tr key={idx} className="hover:bg-[#252525] transition-colors group">
+                                        <td className="p-4 font-medium text-gray-200 flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold shadow-sm">
+                                                {c.name.charAt(0).toUpperCase()}
+                                            </div>
+                                            {c.name}
+                                        </td>
+                                        <td className="p-4">
+                                            {c.source_id === 1 ? (
+                                                <span className="flex items-center gap-1 text-blue-700 bg-blue-100 px-2 py-1 rounded text-xs w-fit">
+                                                    <Facebook size={12} /> Facebook
+                                                </span>
+                                            ) : c.source_id === 2 ? (
+                                                <span className="flex items-center gap-1 text-orange-700 bg-orange-100 px-2 py-1 rounded text-xs w-fit">
+                                                    <ShoppingBag size={12} /> Shopee
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center gap-1 text-gray-700 bg-gray-100 px-2 py-1 rounded text-xs w-fit">
+                                                    <Globe size={12} /> Khác
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="p-4 text-center font-bold">{c.total_comments}</td>
+                                        <td className="p-4 text-center">
+                                            <div className="flex items-center justify-center gap-1">
+                                                <Star size={14} className={c.avg_score > 0 ? "text-yellow-500 fill-yellow-500" : "text-gray-300"} />
+                                                {c.avg_score}
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${c.sentiment_trend === 'Fan cứng' ? 'bg-green-100 text-green-700' :
+                                                c.sentiment_trend === 'Khó tính' ? 'bg-red-100 text-red-700' :
+                                                    'bg-gray-100 text-gray-600'
+                                                }`}>
+                                                {c.sentiment_trend}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            <button
+                                                onClick={() => handleAnalyzeClick(c.name)}
+                                                className="bg-white cursor-pointer border border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all shadow-sm flex items-center gap-1 mx-auto"
+                                            >
+                                                <Sparkles size={14} /> AI Soi
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
 
@@ -145,7 +169,7 @@ export default function CustomersPage() {
                             <button
                                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                 disabled={currentPage === 1}
-                                className="px-3 cursor-pointer text-black py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 cursor-pointer text-gray-200 py-1 text-sm border border-gray-600 rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Trước
                             </button>
@@ -157,9 +181,9 @@ export default function CustomersPage() {
                                     <button
                                         key={pageNum}
                                         onClick={() => setCurrentPage(pageNum)}
-                                        className={`px-3 cursor-pointer py-1 text-sm border rounded-md text-black ${currentPage === pageNum
-                                            ? 'bg-blue-200 border-blue-600'
-                                            : 'border-gray-300 hover:bg-gray-50'
+                                        className={`px-3 cursor-pointer py-1 text-sm border rounded-md text-gray-200 ${currentPage === pageNum
+                                            ? 'bg-blue-600 border-blue-500'
+                                            : 'border-gray-600 hover:bg-gray-700'
                                             }`}
                                     >
                                         {pageNum}
@@ -170,7 +194,7 @@ export default function CustomersPage() {
                             <button
                                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                                 disabled={currentPage === totalPages}
-                                className="px-3 cursor-pointer py-1 text-black text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 cursor-pointer py-1 text-gray-200 text-sm border border-gray-600 rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Tiếp
                             </button>

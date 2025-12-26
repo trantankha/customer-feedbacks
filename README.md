@@ -84,6 +84,7 @@ npm run dev
 ```
 
 Frontend sẽ chạy tại `http://localhost:3000`
+Mở trình duyệt bật chế độ tối rồi truy cập url frontend để trải nghiệm giao diện nhé!
 
 ### 4. Extension
 
