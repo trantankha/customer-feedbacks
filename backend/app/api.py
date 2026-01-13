@@ -69,17 +69,28 @@ def update_feedback_analysis(
 
 @router.get("/feedbacks/export")
 def export_feedbacks(db: Session = Depends(database.get_db)):
+    # 0. Lấy danh sách nguồn đã cấu hình
+    sources = db.query(models.Source).all()
+    source_map = {s.id: s.name for s in sources}
+
     # 1. Lấy dữ liệu từ DB (kèm kết quả phân tích)
-    feedbacks = crud.get_feedbacks(db, limit=10000) # Lấy tối đa 10k dòng
+    feedbacks = crud.get_feedbacks(db, limit=1000) # Lấy tối đa 10k dòng
     
     # 2. Chuyển đổi sang list dict để đưa vào Pandas
     data = []
     for f in feedbacks:
+        # Xử lý Logic Nguồn
+        source_name = f.customer_info.get("imported_from") if f.customer_info else "Unknown"
+        
+        # Nếu có source_id hợp lệ (1, 2, 3) thì lấy tên cấu hình
+        if f.source_id and f.source_id in source_map and f.source_id in [1, 2, 3]:
+            source_name = source_map[f.source_id]
+
         # Flatten dữ liệu (làm phẳng)
         item = {
             "ID": str(f.id),
-            "Nguồn": f.customer_info.get("imported_from"),
-            "Thời gian": f.customer_info.get("time_posted"),
+            "Nguồn": source_name,
+            "Thời gian": f.customer_info.get("original_timestamp") if f.customer_info else "",
             "Nội dung gốc": f.raw_content,
             "Người gửi": f.customer_info.get("name") if f.customer_info else "",
             "Likes": f.customer_info.get("likes") if f.customer_info else 0,
@@ -97,6 +108,7 @@ def export_feedbacks(db: Session = Depends(database.get_db)):
     filepath = os.path.join("tmp", filename) # Lưu vào thư mục tmp trong backend
     
     # Dùng engine openpyxl để ghi
+    os.makedirs("tmp", exist_ok=True) # Ensure tmp dir exists
     df.to_excel(filepath, index=False, engine='openpyxl')
     
     # 5. Trả về file cho trình duyệt tải xuống
