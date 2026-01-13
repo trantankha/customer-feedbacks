@@ -21,7 +21,7 @@ export default function FeedbackList() {
 
     const fetchFeedbacks = () => {
         // Thêm timestamp để tránh cache trình duyệt
-        api.get(`/feedbacks?limit=20&_t=${new Date().getTime()}`)
+        api.get(`/feedbacks?limit=10&_t=${new Date().getTime()}`)
             .then((res) => setFeedbacks(res.data))
             .catch((err) => console.error(err));
     };
@@ -29,7 +29,7 @@ export default function FeedbackList() {
     useEffect(() => {
         fetchFeedbacks();
         // Thiết lập tự động refresh mỗi 30 giây để cập nhật dữ liệu mới cào về
-        const interval = setInterval(fetchFeedbacks, 30000);
+        const interval = setInterval(fetchFeedbacks, 10000);
         return () => clearInterval(interval);
     }, []);
 
