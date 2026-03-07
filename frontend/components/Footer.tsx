@@ -73,7 +73,7 @@ export default function Footer({ theme = 'light' }: FooterProps) {
                 {/* Copyright */}
                 <div className={`border-t ${isDark ? 'border-gray-700' : 'border-gray-300'} mt-8 pt-6 text-center`}>
                     <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                        © 2024 FeedbackPro AI. Tất cả quyền được bảo lưu.
+                        © 2026 FeedbackPro AI. Tất cả quyền được bảo lưu.
                     </p>
                 </div>
             </div>
