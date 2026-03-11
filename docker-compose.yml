@@ -6,8 +6,8 @@ services:
     image: postgres:16-alpine
     container_name: customer-feedbacks-db
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME:-customer_feedbacks}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
     ports:
@@ -15,7 +15,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,24 +31,24 @@ services:
     container_name: customer-feedbacks-backend
     environment:
       # Database Configuration
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-customer_feedbacks}
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_NAME: ${DB_NAME:-customer_feedbacks}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
 
       # Required Secrets (must be set in .env)
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       SECRET_KEY: ${SECRET_KEY}
-      
+
       # API Configuration
       API_HOST: 0.0.0.0
       API_PORT: 8000
-      
+
       # CORS
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://0.0.0.0:3000}
-      
+
       # Other Configuration
       ENVIRONMENT: ${ENVIRONMENT:-development}
       LOG_LEVEL: ${LOG_LEVEL:-info}
