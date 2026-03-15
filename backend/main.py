@@ -1,91 +1,102 @@
+"""
+Feedback System Pro — Application entry point.
+"""
 import os
-import uvicorn
 from contextlib import asynccontextmanager
+
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine.url import make_url
-from app.core import settings
-from app.database import engine, Base
-from app.api import router
+
+from app.core.config import settings
+from app.core.logging import setup_logging, get_logger
+from app.core.exceptions import register_exception_handlers
 from app.db.init_db import init_source_data
+from app.api.v1 import router as api_v1_router
+
+# Initialize logging
+setup_logging(level=settings.LOG_LEVEL)
+logger = get_logger(__name__)
+
 
 def check_and_create_database():
-    """
-    Kiểm tra xem database có tồn tại không, nếu chưa thì tạo mới.
-    Sử dụng database mặc định 'postgres' để kết nối ban đầu.
-    """
+    """Check if the target database exists, create it if not."""
     try:
         url_obj = make_url(settings.DATABASE_URL)
         target_db_name = url_obj.database
-        
+
         if not target_db_name:
-            print("⚠️ [DB Check] DATABASE_URL không có tên database. Bỏ qua kiểm tra.")
+            logger.warning("DATABASE_URL has no database name. Skipping check.")
             return
 
-        # Kết nối tới DB hệ thống 'postgres' để kiểm tra
-        system_url = url_obj.set(database='postgres')
-        print(f"🔍 [DB Check] Đang kiểm tra database '{target_db_name}'...")
-        
-        # isolation_level="AUTOCOMMIT" cần thiết đê chạy CREATE DATABASE
+        system_url = url_obj.set(database="postgres")
+        logger.info(f"Checking database '{target_db_name}'...")
+
         temp_engine = create_engine(system_url, isolation_level="AUTOCOMMIT")
-        
+
         with temp_engine.connect() as conn:
-            query = text(f"SELECT 1 FROM pg_database WHERE datname = :name")
+            query = text("SELECT 1 FROM pg_database WHERE datname = :name")
             exists = conn.execute(query, {"name": target_db_name}).scalar()
 
             if not exists:
-                print(f"⚠️ [DB Check] Database '{target_db_name}' chưa tồn tại.")
-                print(f"✨ [DB Check] Đang tạo database '{target_db_name}'...")
+                logger.warning(f"Database '{target_db_name}' does not exist")
+                logger.info(f"Creating database '{target_db_name}'...")
                 conn.execute(text(f'CREATE DATABASE "{target_db_name}"'))
-                print(f"✅ [DB Check] Đã tạo database '{target_db_name}' thành công!")
+                logger.info(f"Database '{target_db_name}' created successfully")
             else:
-                print(f"✅ [DB Check] Database '{target_db_name}' đã tồn tại.")
-                
-    except Exception as e:
-        print(f"❌ [DB Check Error] Lỗi khi kiểm tra/tạo database: {e}")
-        # Không raise lỗi để server vẫn thử chạy tiếp (có thể DB đã có nhưng lỗi quyền truy cập 'postgres')
+                logger.info(f"Database '{target_db_name}' exists")
 
-# 👇 2. Định nghĩa sự kiện Vòng đời (Startup & Shutdown)
+    except Exception as e:
+        logger.error(f"Database check/create error: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # --- Code chạy khi Server KHỞI ĐỘNG ---
-    print("--- 🚀 SERVER STARTING ---")
-    
-    # 1. Kiểm tra & Tạo Database trước khi tạo bảng
+    logger.info("SERVER STARTING")
+
+    # 1. Check & create database (if not exists)
     check_and_create_database()
-    
-    # 2. Tạo bảng DB (nếu chưa có)
-    Base.metadata.create_all(bind=engine)
-    
-    # 3. Gọi hàm gieo dữ liệu (Bạn có thể comment dòng này nếu không muốn chạy)
+
+    # 2. Tables are managed by Alembic migrations
+    # Run: alembic upgrade head
+    # Note: Base.metadata.create_all() is NOT used with Alembic
+
+    # 3. Seed data
     init_source_data()
 
-    # 4. Kiểm tra và tạo thư mục tmp nếu chưa có
-    if not os.path.exists('tmp'):
-        os.makedirs('tmp')
-        print("--- 📁 Created tmp directory ---")
+    # 4. Create tmp directory
+    if not os.path.exists("tmp"):
+        os.makedirs("tmp")
+        logger.info("Created tmp directory")
 
-    yield # Server chạy tại đây
-    
-    # --- Code chạy khi Server TẮT (Cleanup) ---
-    print("--- 🛑 SERVER SHUTDOWN ---")
+    yield
 
-# 👇 3. Gắn lifespan vào FastAPI App
+    logger.info("SERVER SHUTDOWN")
+
+
+# Create FastAPI app
 app = FastAPI(
-    title="Feedback System Pro",
-    lifespan=lifespan # <--- Đăng ký tại đây
+    title=settings.PROJECT_NAME,
+    lifespan=lifespan,
 )
 
-# Cấu hình CORS
+# Register exception handlers
+register_exception_handlers(app)
+
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origin_list,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(router, prefix="/api/v1")
+# Include API routes
+app.include_router(api_v1_router, prefix=settings.API_V1_PREFIX)
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

@@ -1,42 +1,76 @@
-from app import models
-from app.database import SessionLocal, engine
+"""
+Database initialization: seed sources and default admin user.
+"""
+from app.db.session import SessionLocal
+from app.models import Source
+from app.services import auth_service, source_service
+from app.core.config import settings
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+
 
 def init_source_data():
     """
-    Hàm này kiểm tra và tạo dữ liệu mẫu cho bảng Source.
-    Nó tự quản lý Session riêng để không ảnh hưởng đến main app.
+    Check and create seed data for Source table and default admin user.
+    
+    Note: Tables should be created by Alembic migrations before calling this function.
+    Run: alembic upgrade head
     """
     db = SessionLocal()
     try:
-        # Đảm bảo bảng đã được tạo
-        models.Base.metadata.create_all(bind=engine)
-        
-        print("🌱 [Seeding] Đang kiểm tra dữ liệu nguồn...")
-        
-        # Danh sách nguồn chuẩn (Hard-code)
+        # Note: Base.metadata.create_all() is NOT needed - tables are managed by Alembic
+        # Just seed data into existing tables
+
+        logger.info("[Seeding] Checking source data...")
+
         sources_data = [
-            {"id": 1, "name": "Facebook Comments", "platform": "FACEBOOK"},
-            {"id": 2, "name": "Shopee Reviews", "platform": "SHOPEE"},
-            {"id": 3, "name": "Other / Upload", "platform": "OTHER"},
+            {"name": "Facebook Comments", "platform": "FACEBOOK"},
+            {"name": "Shopee Reviews", "platform": "SHOPEE"},
+            {"name": "Tiktok Comments", "platform": "TIKTOK"},
+            {"name": "Other / Upload", "platform": "OTHER"},
         ]
-        
+
         count_new = 0
         for data in sources_data:
-            # Kiểm tra xem ID này đã có chưa
-            source = db.query(models.Source).filter(models.Source.id == data["id"]).first()
+            source = source_service.get_source_by_platform(db, data["platform"])
             if not source:
-                new_source = models.Source(**data) # Unpack dict thành object
-                db.add(new_source)
+                source_service.create_source(db, name=data["name"], platform=data["platform"])
                 count_new += 1
-        
-        db.commit()
+
         if count_new > 0:
-            print(f"✅ [Seeding] Đã khởi tạo thêm {count_new} nguồn dữ liệu.")
+            logger.info(f"[Seeding] Initialized {count_new} new sources")
         else:
-            print("👌 [Seeding] Dữ liệu nguồn đã đầy đủ.")
-            
+            logger.info("[Seeding] Source data already complete")
+
+        # Create default admin user
+        logger.info("[Seeding] Checking admin user...")
+        admin = auth_service.get_user_by_username(db, "admin")
+
+        if not admin:
+            admin_password = settings.DEFAULT_ADMIN_PASSWORD
+            admin_user = {
+                "username": "admin",
+                "email": "admin@example.com",
+                "password": admin_password,
+                "full_name": "Administrator",
+            }
+            auth_service.create_user(db, admin_user)
+
+            admin = auth_service.get_user_by_username(db, "admin")
+            if admin:
+                admin.is_superuser = True
+                db.commit()
+                logger.info("[Seeding] Created default admin user (admin)")
+                if settings.ENVIRONMENT == "development":
+                    logger.warning(
+                        f"[Seeding] Admin password: {admin_password} — CHANGE IN PRODUCTION!"
+                    )
+        else:
+            logger.info("[Seeding] Admin user already exists")
+
     except Exception as e:
-        print(f"❌ [Seeding Error] Lỗi khởi tạo dữ liệu: {e}")
+        logger.error(f"[Seeding Error] {e}")
         db.rollback()
     finally:
         db.close()

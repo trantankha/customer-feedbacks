@@ -36,8 +36,8 @@ export default function Footer({ theme = 'light' }: FooterProps) {
                         <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Điều hướng</h3>
                         <nav className="flex flex-col gap-2">
                             <Link
-                                href="/"
-                                className={`flex items-center gap-2 text-sm font-medium transition-all duration-200 hover:scale-105 ${pathname === '/' ? (isDark ? 'text-purple-300' : 'text-blue-600') : (isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900')}`}
+                                href="/dashboard"
+                                className={`flex items-center gap-2 text-sm font-medium transition-all duration-200 hover:scale-105 ${pathname === '/dashboard' ? (isDark ? 'text-purple-300' : 'text-blue-600') : (isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900')}`}
                             >
                                 <LayoutDashboard size={16} /> Dashboard
                             </Link>

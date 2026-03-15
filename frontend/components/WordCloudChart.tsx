@@ -23,28 +23,17 @@ export default function WordCloudChart() {
     }, []);
 
     if (loading) return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[300px] flex justify-center items-center">
-            <Loader2 className="animate-spin text-blue-500" />
+        <div className="flex justify-center items-center h-full min-h-[200px]">
+            <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
         </div>
     );
 
     return (
-        // 👇 UI PRO: Không dùng h-full, thêm background gradient nhẹ
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
-            <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-100">
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                    <Cloud size={20} />
-                </div>
-                <div>
-                    <h3 className="font-bold text-gray-800">Xu hướng Từ khóa</h3>
-                    <p className="text-xs text-gray-400">Những từ xuất hiện nhiều nhất</p>
-                </div>
-            </div>
-
+        <div className="flex flex-col h-full">
             {data.length === 0 ? (
-                <div className="h-[250px] flex flex-col justify-center items-center text-gray-400">
-                    <Cloud size={48} className="text-gray-200 mb-2" />
-                    <p>Chưa có đủ dữ liệu</p>
+                <div className="h-full min-h-[200px] flex flex-col justify-center items-center text-gray-400 bg-gray-50/50 rounded-lg border border-dashed border-gray-200">
+                    <Cloud size={48} className="text-gray-300 mb-2" />
+                    <p className="text-sm">Chưa có đủ dữ liệu</p>
                 </div>
             ) : (
                 // Set chiều cao cố định cho vùng cloud để không bị vỡ layout
