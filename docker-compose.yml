@@ -8,8 +8,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME:-customer_feedbacks}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
@@ -23,71 +22,12 @@ services:
       - customer-feedbacks-network
     restart: unless-stopped
 
-  # Backend API Service
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: customer-feedbacks-backend
-    environment:
-      # Database Configuration
-      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME}
-
-      # Required Secrets (must be set in .env)
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      SECRET_KEY: ${SECRET_KEY}
-
-      # API Configuration
-      API_HOST: 0.0.0.0
-      API_PORT: 8000
-
-      # CORS
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://0.0.0.0:3000}
-
-      # Other Configuration
-      ENVIRONMENT: ${ENVIRONMENT:-development}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-      
+  # Redis (Message Broker for Celery)
+  redis:
+    image: redis:7-alpine
+    container_name: customer-feedbacks-redis
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
-    volumes:
-      - ./backend:/app
-      - /app/__pycache__
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - customer-feedbacks-network
-    restart: unless-stopped
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
-  # Frontend Application
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
-    container_name: customer-feedbacks-frontend
-    environment:
-      NODE_ENV: ${NODE_ENV:-development}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"
-    # In production we do not mount the source tree; the image contains the build output.
-    # If you need hot-reload for development, uncomment the following volume mounts and
-    # change the command to "npm run dev" or use a separate docker-compose.override.yml.
-    # volumes:
-    #   - ./frontend:/app
-    #   - /app/node_modules
-    #   - /app/.next
-    depends_on:
-      - backend
+      - "6379:6379"
     networks:
       - customer-feedbacks-network
     restart: unless-stopped

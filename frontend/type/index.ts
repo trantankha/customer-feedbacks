@@ -7,7 +7,7 @@ export interface Analysis {
 export interface Feedback {
     id: string;
     raw_content: string;
-    source_id: number;
+    source_id: string;
     status: string;
     received_at: string;
     customer_info: {

@@ -1,136 +1,99 @@
-# Feedback System Pro
+# Feedback System Pro 🚀
 
-## Mô tả dự án
+**Feedback System Pro** là một nền tảng quản lý và phân tích phản hồi khách hàng toàn diện, tích hợp trí tuệ nhân tạo (AI) để giúp doanh nghiệp thấu hiểu khách hàng một cách tự động và chuyên nghiệp.
 
-Feedback System Pro là một hệ thống quản lý và phân tích phản hồi khách hàng toàn diện. Dự án bao gồm ba thành phần chính:
+Hệ thống được thiết kế để xử lý dữ liệu lớn thông qua cơ chế hàng đợi (Queue), cung cấp các cảnh báo tức thì qua Telegram/Email và trình diễn dữ liệu trực quan trên Dashboard hiện đại.
 
-- **Backend**: API server được xây dựng bằng FastAPI để xử lý dữ liệu phản hồi, phân tích và lưu trữ.
-- **Frontend**: Giao diện người dùng được phát triển bằng Next.js để hiển thị dashboard, thống kê và quản lý phản hồi.
-- **Extension-Scraper**: Phần mở rộng trình duyệt Chrome để thu thập phản hồi từ các nền tảng như Shopee và Facebook.
+---
 
-Mục tiêu của dự án là cung cấp một giải pháp toàn diện để thu thập, phân tích và trực quan hóa phản hồi khách hàng, giúp doanh nghiệp hiểu rõ hơn về ý kiến của khách hàng.
+## 🌟 Tính năng chính
 
-## Tính năng chính
+- **Phân tích AI thông minh**: Sử dụng Google Gemini AI để tự động phân tích cảm xúc (Sentiment) và trích xuất nguyên nhân gốc rễ (Root Cause) từ bình luận của khách hàng.
+- **Xử lý tác vụ nền (Background Tasks)**: Tích hợp Celery & Redis để xử lý các tệp CSV hàng nghìn dòng mà không gây treo hệ thống.
+- **Hệ thống cảnh báo đa kênh**:
+    - **Telegram**: Gửi thông báo tức thì khi phát hiện phản hồi tiêu cực.
+    - **Email (Resend)**: Gửi báo cáo tổng kết và cảnh báo chi tiết với giao diện HTML chuyên nghiệp.
+- **Chrome Extension Scraper**: Cho phép thu thập dữ liệu trực tiếp từ các nền tảng mạng xã hội (TikTok, Facebook,...) và đẩy thẳng vào hệ thống.
+- **Dashboard trực quan**: Theo dõi chỉ số cảm xúc, xu hướng phản hồi và các vấn đề nổi cộm theo thời gian thực.
+- **Giám sát hệ thống**: Tích hợp Flower để quản lý trạng thái các tác vụ chạy ngầm.
 
-- Thu thập phản hồi tự động từ Shopee và Facebook qua extension Chrome
-- Phân tích phản hồi sử dụng AI (PhoBERT cho cảm xúc, Google Generative AI cho chat)
-- Chatbot AI để hỏi đáp và phân tích sâu về dữ liệu phản hồi
-- Phân tích chân dung khách hàng dựa trên lịch sử tương tác
-- Trực quan hóa dữ liệu với biểu đồ từ vựng, biểu đồ phân tích và word cloud
-- Dashboard quản lý phản hồi với giao diện thân thiện, hỗ trợ làm mới và xuất báo cáo
-- Xuất báo cáo Excel với kết quả phân tích chi tiết
-- Nhập hàng loạt phản hồi từ extension với xử lý nền
-- Phân tích xu hướng cảm xúc theo thời gian
-- Quản lý hồ sơ khách hàng với phân trang
-- API RESTful cho tích hợp với các hệ thống khác
-- Hỗ trợ tải lên file CSV/Excel để nhập dữ liệu phản hồi theo nền tảng
+---
 
-## Công nghệ sử dụng
+## 🛠 Công nghệ sử dụng
 
 ### Backend
-- **FastAPI**: Framework web nhanh cho Python
-- **SQLAlchemy**: ORM cho cơ sở dữ liệu
-- **PostgreSQL**: Cơ sở dữ liệu chính
-- **Pandas**: Xử lý dữ liệu
-- **Google Generative AI**: Chatbot AI và phân tích chân dung khách hàng
-- **Transformers (PhoBERT)**: Phân tích cảm xúc tiếng Việt
-- **Uvicorn**: ASGI server
+- **Framework**: FastAPI (Python 3.11+)
+- **Database**: PostgreSQL với SQLAlchemy ORM
+- **Task Queue**: Celery & Redis
+- **AI**: Google Generative AI (Gemini Flash 2.0)
+- **Migrations**: Alembic
 
 ### Frontend
-- **Next.js**: Framework React cho web
-- **React**: Thư viện UI
-- **TypeScript**: Kiểm tra kiểu dữ liệu
-- **Tailwind CSS**: Framework CSS
-- **Recharts**: Thư viện biểu đồ
-- **Axios**: HTTP client
+- **Framework**: Next.js 15+ (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS & Modern UI/UX
 
-### Extension
-- **Chrome Extension Manifest V3**: Phần mở rộng trình duyệt
-- **JavaScript**: Ngôn ngữ lập trình chính
+### Infrastructure
+- **Containerization**: Docker & Docker Compose (duy nhất cho Database và Redis)
+- **Monitoring**: Flower (Celery Monitoring)
+- **Email Service**: Resend SDK
 
-## Yêu cầu hệ thống
+---
 
-- Python 3.8+
-- Node.js 16+
-- PostgreSQL
-- Google Chrome (cho extension)
-- Tài khoản Google AI API (cho phân tích AI)
+## 🚀 Hướng dẫn cài đặt
 
-## Cài đặt và chạy
+### 1. Chuẩn bị Cơ sở hạ tầng (Docker)
+Đảm bảo bạn đã cài đặt Docker, sau đó chạy lệnh để bật Postgres và Redis:
+```bash
+docker-compose up -d
+```
 
-### 1. Chuẩn bị môi trường
+### 2. Cấu hình môi trường (.env)
+Tạo file `.env` trong thư mục `backend/` dựa trên mẫu và cập nhật các API Key:
+- `GEMINI_API_KEY`: Lấy từ Google AI Studio.
+- `TELEGRAM_BOT_TOKEN`: Lấy từ BotFather.
+- `RESEND_API_KEY`: Lấy từ Resend.com.
 
-- Cài đặt Python, Node.js và PostgreSQL
-- Tạo database PostgreSQL cho dự án
-- Lấy API key từ Google AI Studio
-
-### 2. Backend
-
+### 3. Cài đặt và Chạy Backend
 ```bash
 cd backend
 pip install -r requirements.txt
-# Cấu hình biến môi trường cho database và Google AI API
-uvicorn main:app --reload
+alembic upgrade head  # Khởi tạo database
+python run_all.py     # Chạy Backend + Worker + Flower
 ```
 
-Server sẽ chạy tại `http://127.0.0.1:8000`
-
-### 3. Frontend
-
+### 4. Cài đặt và Chạy Frontend
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Frontend sẽ chạy tại `http://localhost:3000`
-Mở trình duyệt bật chế độ tối rồi truy cập url frontend để trải nghiệm giao diện nhé!
+---
 
-### 4. Extension
+## 🔍 Giám sát và Kiểm thử
 
-1. Mở Chrome và truy cập `chrome://extensions/`
-2. Bật "Developer mode"
-3. Click "Load unpacked" và chọn thư mục `extension-scraper`
-4. Extension sẽ xuất hiện trong thanh công cụ
+- **Dashboard**: [http://localhost:3000](http://localhost:3000)
+- **API Documentation (Swagger)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Monitor Tasks (Flower)**: [http://localhost:5555](http://localhost:5555)
+- **Test Email**: Chạy `python scripts/test_resend.py` trong thư mục backend.
 
-## Cách sử dụng
+---
 
-1. **Cài đặt extension**: Cài đặt extension Chrome để thu thập phản hồi từ Shopee/Facebook
-2. **Thu thập dữ liệu**: Sử dụng extension để scrape phản hồi và gửi về hệ thống tự động
-3. **Xem dashboard**: Truy cập frontend để xem thống kê, biểu đồ phân tích và danh sách phản hồi
-4. **Phân tích AI**: Sử dụng chatbot để hỏi đáp về dữ liệu, hoặc phân tích chân dung khách hàng
-5. **Quản lý khách hàng**: Xem hồ sơ khách hàng và xu hướng tương tác
-6. **Xuất báo cáo**: Tải xuống báo cáo Excel với kết quả phân tích chi tiết
-7. **Tải lên dữ liệu**: Upload file CSV/Excel để nhập phản hồi theo nền tảng cụ thể
+## 📁 Cấu trúc thư mục
 
-## API Documentation
+```text
+├── backend/            # FastAPI Source Code, Models, Tasks
+├── frontend/           # Next.js Application, Components, Hooks
+├── extension-scraper/  # Chrome Extension source code
+├── docker-compose.yml  # Infrastructure configuration (DB, Redis)
+└── README.md           # Project documentation
+```
 
-API được cung cấp qua FastAPI với documentation tự động tại `/docs` khi server chạy.
+---
 
-Các endpoint chính:
-- `GET /api/v1/feedbacks`: Lấy danh sách phản hồi
-- `POST /api/v1/feedbacks/test-create`: Tạo phản hồi mới (test)
-- `POST /api/v1/feedbacks/upload-csv`: Tải lên file CSV theo nền tảng
-- `POST /api/v1/feedbacks/batch-import`: Nhập hàng loạt từ extension
-- `PUT /api/v1/feedbacks/{id}/analysis`: Cập nhật kết quả phân tích
-- `GET /api/v1/feedbacks/export`: Xuất báo cáo Excel
-- `GET /api/v1/dashboard/stats`: Lấy thống kê dashboard
-- `GET /api/v1/dashboard/keywords`: Lấy từ khóa nổi bật
-- `GET /api/v1/dashboard/trend`: Lấy xu hướng cảm xúc
-- `GET /api/v1/customers`: Lấy danh sách khách hàng (phân trang)
-- `POST /api/v1/customers/analyze-profile`: Phân tích chân dung khách hàng
-- `POST /api/v1/chat/ask`: Hỏi đáp với AI về dữ liệu phản hồi
+## 🛡 Bảo mật
+Hệ thống không lưu trữ API Key trực tiếp trong mã nguồn. Tất cả thông tin nhạy cảm được quản lý thông qua biến môi trường (.env) và tệp này được liệt kê trong `.gitignore` để đảm bảo an toàn.
 
-## Đóng góp
-
-Chúng tôi hoan nghênh mọi đóng góp! Vui lòng:
-
-1. Fork dự án
-2. Tạo branch cho tính năng mới (`git checkout -b feature/AmazingFeature`)
-3. Commit thay đổi (`git commit -m 'Add some AmazingFeature'`)
-4. Push lên branch (`git push origin feature/AmazingFeature`)
-5. Tạo Pull Request
-
-## Giấy phép
-
-Dự án này được phân phối dưới giấy phép MIT. Xem file `LICENSE` để biết thêm chi tiết.
+---
+*Phát triển với ❤️ bởi **FeedBack System Pro Team***.

@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { Edit2, Check, X, Clock } from 'lucide-react';
+import { Edit2, Check, X, Clock, Music } from 'lucide-react';
 import { Feedback } from '@/type';
 
 export default function FeedbackList() {
     const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+    const [sources, setSources] = useState<any[]>([]);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [tempLabel, setTempLabel] = useState<string>("");
 
@@ -28,6 +29,7 @@ export default function FeedbackList() {
 
     useEffect(() => {
         fetchFeedbacks();
+        api.get('/sources').then(res => setSources(res.data)).catch(err => console.error(err));
         // Thiết lập tự động refresh mỗi 30 giây để cập nhật dữ liệu mới cào về
         const interval = setInterval(fetchFeedbacks, 10000);
         return () => clearInterval(interval);
@@ -72,16 +74,28 @@ export default function FeedbackList() {
         }
     };
 
+    const getPlatformInfo = (sourceId: string | undefined | null) => {
+        if (!sourceId) return { name: 'Khác', bg: 'bg-gray-400' };
+        const source = sources.find(s => s.id === sourceId);
+        if (!source) return { name: 'Khác', bg: 'bg-gray-400' };
+
+        const platform = source.platform?.toUpperCase();
+        if (platform === 'FACEBOOK') return { name: 'Facebook', bg: 'bg-blue-600' };
+        if (platform === 'SHOPEE') return { name: 'Shopee', bg: 'bg-orange-500' };
+        if (platform === 'TIKTOK') return { name: 'TikTok', bg: 'bg-gradient-to-r from-black to-gray-800 text-white', icon: <Music size={10} className="mr-0.5" /> };
+        return { name: source.name, bg: 'bg-gray-500' };
+    };
+
     return (
-        <div className="bg-white p-6 shadow-sm h-full overflow-hidden flex flex-col">
-            <h3 className="font-semibold mb-2 text-gray-700 flex justify-between items-center">
+        <div className="bg-transparent p-6 h-full overflow-hidden flex flex-col">
+            <h3 className="font-semibold mb-2 text-gray-800 flex justify-between items-center">
                 Phản hồi gần đây
-                <button onClick={fetchFeedbacks} className="text-xs cursor-pointer text-blue-500 hover:underline">Làm mới ngay</button>
+                <button onClick={fetchFeedbacks} className="text-xs font-medium cursor-pointer text-blue-600 hover:text-blue-700 hover:underline">Làm mới ngay</button>
             </h3>
 
-            <div className="flex-1 overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-gray-200">
+            <div className="flex-1 overflow-y-auto pr-3 space-y-4 custom-scrollbar">
                 {feedbacks.map((item) => (
-                    <div key={item.id} className="border-b pb-4 last:border-0 last:pb-0 hover:bg-gray-50 p-3 rounded-lg transition-colors group">
+                    <div key={item.id} className="bg-white border border-gray-100 shadow-[0_2px_8px_rgb(0,0,0,0.04)] pb-4 last:border-0 hover:border-blue-200 p-4 rounded-xl transition-all group">
 
                         <div className="flex justify-between items-start mb-2">
                             {/* --- Label & Edit --- */}
@@ -142,15 +156,23 @@ export default function FeedbackList() {
                                 {item.customer_info.likes && (
                                     <span className="flex items-center gap-1">👍 {item.customer_info.likes}</span>
                                 )}
-                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium text-white
-                    ${item.source_id === 1 ? 'bg-blue-600' : item.source_id === 2 ? 'bg-orange-500' : 'bg-gray-400'}`}>
-                                    {item.source_id === 1 ? 'Facebook' : item.source_id === 2 ? 'Shopee' : 'Khác'}
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium text-white flex items-center gap-1 ${getPlatformInfo(item.source_id).bg}`}>
+                                    {getPlatformInfo(item.source_id).icon || null}
+                                    {getPlatformInfo(item.source_id).name}
                                 </span>
                             </div>
                         )}
                     </div>
                 ))}
             </div>
+
+            {/* Custom Scrollbar for Feedback List */}
+            <style jsx>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+            `}</style>
         </div>
     );
 }
