@@ -34,7 +34,10 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
         if (window.location.href.includes("facebook")) {
             scrapeFacebookDOM();
         } else if (window.location.href.includes("tiktok")) {
-            scrapeTiktokDOM();
+            // [API Mode] Tiktok giờ dùng interceptor (giống Shopee). 
+            // Khi user ấn mở bình luận, dữ liệu đã được tự đẩy vào collectedItems.
+            // Nên chỉ cần gửi luôn mà không phải cào DOM nữa!
+            console.log("👆 Bắt đầu tổng hợp data Tiktok đã được API Interceptor bắt...");
         }
 
         // Gửi ngay lập tức những gì đang có
@@ -67,7 +70,34 @@ window.addEventListener("message", (event) => {
                 });
             }
         });
-        console.log(`📦 [Shopee] Đã bắt được ${collectedItems.length} review.`);
+        console.log(`📦 [Shopee API] Đã bắt được tổng cộng ${collectedItems.length} review trong kho.`);
+    }
+
+    // TIKTOK API BATCH
+    if (platform === "TIKTOK" && Array.isArray(payload)) {
+        payload.forEach(c => {
+            if (c.text && c.text.trim().length > 0) {
+                let specificTime = null;
+                if (c.create_time) {
+                    specificTime = new Date(c.create_time * 1000).toISOString();
+                }
+
+                let author = "Tiktok User";
+                if (c.user && c.user.nickname) author = c.user.nickname;
+                else if (c.user && c.user.unique_id) author = c.user.unique_id;
+
+                let likes = c.digg_count || 0;
+
+                collectedItems.push({
+                    author_name: author,
+                    content: c.text,
+                    original_timestamp: specificTime,
+                    source_platform: "TIKTOK",
+                    likes: likes
+                });
+            }
+        });
+        console.log(`📦 [Tiktok API] Đã bắt được tổng cộng ${collectedItems.length} review trong kho.`);
     }
 });
 
@@ -91,7 +121,7 @@ function startAutoScrollProcess(platform) {
             clickFacebookButtons();
             scrapeFacebookDOM();
         } else if (platform === "TIKTOK") {
-            scrapeTiktokDOM();
+            // Chỉ cần scroll để kích phát API tự động gọi
         }
 
         // ĐIỀU KIỆN DỪNG
@@ -259,62 +289,4 @@ function parseStrictDate(str) {
         }
     } catch (e) { return null; }
     return null;
-}
-
-function scrapeTiktokDOM() {
-    // Logic cào Tiktok DOM cơ bản
-    // Tiktok thường dùng các trường DOM có thuộc tính data-e2e="comment-level-1"
-    let commentNodes = document.querySelectorAll('div[class*="DivCommentItemContainer"], div[data-e2e="comment-level-1"]');
-
-    // Fallback nếu cấu trúc DOM đổi
-    if (commentNodes.length === 0) {
-        commentNodes = document.querySelectorAll('div[class*="CommentItem"]');
-    }
-
-    commentNodes.forEach(node => {
-        let text = "";
-        let author = "Tiktok User";
-
-        // Tìm text bình luận
-        const textNode = node.querySelector('p[data-e2e="comment-level-1"], p[class*="CommentText"], span[class*="SpanCommentContent"]');
-        if (textNode) {
-            text = textNode.innerText;
-        } else {
-            // Cố gắng lấy hết text trong các thẻ P bỏ qua nút Trả lời/Thích
-            const pTags = node.querySelectorAll('p');
-            pTags.forEach(p => {
-                if (p.innerText && !["Trả lời", "Thích"].includes(p.innerText.trim())) {
-                    text += p.innerText + " ";
-                }
-            });
-        }
-
-        text = text.trim();
-        if (text && text.length > 2) {
-            // Tên người dùng
-            const authorEl = node.querySelector('span[data-e2e="comment-username-1"], span[class*="SpanUserNameText"]');
-            if (authorEl) author = authorEl.innerText;
-
-            // Số lượt like
-            let likes = 0;
-            const likeEl = node.querySelector('span[data-e2e="comment-like-count"], span[class*="SpanCount"]');
-            if (likeEl) {
-                let likeText = likeEl.innerText.toLowerCase().trim();
-                // Xử lý kí hiệu nghìn K
-                if (likeText.includes('k')) {
-                    likes = parseFloat(likeText.replace(/,/g, '.')) * 1000;
-                } else {
-                    likes = parseInt(likeText) || 0;
-                }
-            }
-
-            collectedItems.push({
-                author_name: author,
-                content: text,
-                original_timestamp: new Date().toISOString(), // Dùng thời gian hiện tại lúc cào thay vì cố phân tích timestamp bị che khuất
-                source_platform: "TIKTOK",
-                likes: likes
-            });
-        }
-    });
 }

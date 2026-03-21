@@ -28,12 +28,17 @@ export default function FeedbackList() {
     };
 
     useEffect(() => {
+        let isDefaultInterval = true;
         fetchFeedbacks();
         api.get('/sources').then(res => setSources(res.data)).catch(err => console.error(err));
-        // Thiết lập tự động refresh mỗi 30 giây để cập nhật dữ liệu mới cào về
-        const interval = setInterval(fetchFeedbacks, 10000);
+        
+        // Nếu có feedback đang chờ AI phân tích, refresh nhanh hơn (3s), ngược lại 10s
+        const hasPending = feedbacks.some(f => f.status === 'PENDING_ANALYSIS');
+        const intervalTime = hasPending ? 3000 : 10000;
+        
+        const interval = setInterval(fetchFeedbacks, intervalTime);
         return () => clearInterval(interval);
-    }, []);
+    }, [feedbacks.some(f => f.status === 'PENDING_ANALYSIS')]);
 
     // Hàm format thời gian đẹp mắt (VN)
     const formatTime = (isoString: string) => {
@@ -116,11 +121,21 @@ export default function FeedbackList() {
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-2">
-                                        <span className={`text-[10px] font-bold px-2 py-1 rounded select-none border
+                                        {item.status === 'PENDING_ANALYSIS' ? (
+                                            <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded select-none border bg-blue-50 text-blue-700 border-blue-200">
+                                                <svg className="animate-spin h-3 w-3 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                ĐANG PHÂN TÍCH AI...
+                                            </span>
+                                        ) : (
+                                            <span className={`text-[10px] font-bold px-2 py-1 rounded select-none border
                       ${item.analysis?.sentiment_label === 'POSITIVE' ? 'bg-green-50 text-green-700 border-green-200' :
                                                 item.analysis?.sentiment_label === 'NEGATIVE' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-gray-50 text-gray-700 border-gray-200'}`}>
-                                            {item.analysis?.sentiment_label || 'CHƯA XỬ LÝ'}
-                                        </span>
+                                                {item.analysis?.sentiment_label || 'CHƯA XỬ LÝ'}
+                                            </span>
+                                        )}
                                         <button onClick={() => startEdit(item)} className="text-gray-400 cursor-pointer hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Edit2 size={12} />
                                         </button>

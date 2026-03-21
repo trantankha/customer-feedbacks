@@ -148,6 +148,104 @@ def create_feedback_with_analysis(
     return db_feedback, is_negative_alert, alert_data
 
 
+def create_pending_feedback(
+    db: Session,
+    content: str,
+    source_id: UUID = None,
+    custom_time: datetime = None,
+    created_by: UUID = None,
+    author_name: str = "Khách hàng ẩn danh",
+) -> Feedback:
+    """Create a Feedback with PENDING_ANALYSIS status to be analyzed later."""
+    db_feedback = Feedback(
+        raw_content=content,
+        source_id=source_id,
+        status="PENDING_ANALYSIS",
+        created_by=created_by,
+    )
+
+    if custom_time:
+        db_feedback.received_at = custom_time
+
+    db.add(db_feedback)
+    db.commit()
+    db.refresh(db_feedback)
+
+    return db_feedback
+
+
+def run_ai_analysis_for_feedback(
+    db: Session,
+    feedback_id: UUID,
+    author_name: str = "Khách hàng ẩn danh",
+) -> tuple[bool, dict]:
+    """Run AI analysis for an existing feedback and update its status.
+    Returns: (is_negative_alert, alert_data)
+    """
+    db_feedback = db.query(Feedback).filter(Feedback.id == feedback_id).first()
+    if not db_feedback:
+        return False, {}
+    
+    content = db_feedback.raw_content
+    
+    # AI Analysis
+    source_name = "OTHER"
+    if db_feedback.source_id:
+        source = db.query(Source).filter(Source.id == db_feedback.source_id).first()
+        if source:
+            source_name = source.platform
+
+    ai_result = analyze_text(content, source=source_name)
+
+    # If low confidence, flag for review and ask Gemini for second opinion
+    gemini_label = None
+    if ai_result["needs_review"]:
+        db_feedback.status = "NEEDS_REVIEW"
+        try:
+            from app.services.gemini_service import verify_sentiment_with_gemini
+            gemini_label = verify_sentiment_with_gemini(content, ai_result["label"])
+            logger.info(
+                f"Low confidence ({ai_result['confidence']:.2f}): "
+                f"PhoBERT={ai_result['label']}, Gemini={gemini_label}"
+            )
+            # If Gemini agrees with PhoBERT, auto-resolve
+            if gemini_label == ai_result["label"]:
+                db_feedback.status = "PROCESSED"
+        except Exception as e:
+            logger.warning(f"Gemini double-check failed: {e}")
+    else:
+        db_feedback.status = "PROCESSED"
+
+    db_analysis = AnalysisResult(
+        feedback_id=db_feedback.id,
+        sentiment_score=ai_result["score"],
+        sentiment_label=ai_result["label"],
+        keywords=ai_result["keywords"],
+        confidence=ai_result["confidence"],
+        is_manual_override=False,
+        gemini_label=gemini_label,
+    )
+    db.add(db_analysis)
+    db.commit()
+    db.refresh(db_analysis)
+
+    is_negative_alert = False
+    alert_data = {}
+    final_label = gemini_label if gemini_label else ai_result["label"]
+    
+    if final_label == "NEGATIVE":
+        is_negative_alert = True
+        alert_data = {
+            "platform": source_name,
+            "content": content,
+            "score": ai_result["score"],
+            "author": author_name
+        }
+
+    return is_negative_alert, alert_data
+
+
+
 def get_feedbacks(db: Session, skip: int = 0, limit: int = 20) -> List[Feedback]:
     """Get feedbacks ordered by most recent."""
     return (

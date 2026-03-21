@@ -30,10 +30,10 @@ def run_all():
         # -A app.core.celery_config.celery_app: points to the celery instance
         # -P solo: required for Windows stability
         worker_cmd = [
-            "celery", 
-            "-A", "app.core.celery_config.celery_app", 
-            "worker", 
-            "--loglevel=info", 
+            "celery",
+            "-A", "app.core.celery_config.celery_app",
+            "worker",
+            "--loglevel=info",
             "-P", "solo"
         ]
         
@@ -48,9 +48,9 @@ def run_all():
         # 3. Start Flower (Celery Monitoring)
         print("🔍 Starting Flower (Monitoring)...")
         flower_cmd = [
-            "celery", 
-            "-A", "app.core.celery_config.celery_app", 
-            "flower", 
+            "celery",
+            "-A", "app.core.celery_config.celery_app",
+            "flower",
             "--port=5555"
         ]
         flower_proc = subprocess.Popen(
