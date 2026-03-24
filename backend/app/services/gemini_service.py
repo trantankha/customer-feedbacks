@@ -84,6 +84,9 @@ def ask_gemini_about_data(question: str, context_data: list) -> str:
         return response.text
     except Exception as e:
         logger.error(f"Gemini error: {e}")
+        error_msg = str(e)
+        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg or "quota" in error_msg.lower():
+            return "🔥 Cảnh báo: Hệ thống AI đang quá tải (bạn đã dùng hết hạn mức của Google Gemini). Vui lòng chờ một chút rồi thử lại nhé!"
         return f"Lỗi khi hỏi Gemini: {e}"
 
 
@@ -125,6 +128,9 @@ def analyze_customer_persona(customer_name: str, history: list) -> str:
         return response.text
     except Exception as e:
         logger.error(f"Gemini error: {e}")
+        error_msg = str(e)
+        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg or "quota" in error_msg.lower():
+            return "🔥 Không thể phân tích hồ sơ: Hệ thống AI đang quá tải (Hết hạn mức). Vui lòng thử lại sau."
         return f"Lỗi khi gọi Gemini: {e}"
 
 

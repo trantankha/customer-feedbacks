@@ -2,79 +2,102 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Mail, Phone, MapPin } from 'lucide-react';
+import { LayoutDashboard, Users, Mail, Phone, MapPin, ShieldCheck, FileText, Settings as SettingsIcon } from 'lucide-react';
 
-interface FooterProps {
-    theme?: 'dark' | 'light';
-}
-
-export default function Footer({ theme = 'light' }: FooterProps) {
+export default function Footer() {
     const pathname = usePathname();
-    const isDark = theme === 'dark';
 
     return (
-        <footer className={`border-t ${isDark ? 'border-gray-800 bg-[#16181d]/90 backdrop-blur-md' : 'border-gray-200 bg-white/95 backdrop-blur-md shadow-lg'} mt-auto transition-all duration-300 ease-in-out`}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <footer className="bg-white border-t border-gray-100 mt-auto pt-16 pb-8">
+            <div className="max-w-[1600px] mx-auto px-6 md:px-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-12">
                     {/* Brand Section */}
-                    <div className="flex flex-col items-center md:items-start">
-                        <div className={`p-3 ${isDark ? 'bg-gradient-to-br from-purple-500 to-purple-700' : 'bg-gradient-to-br from-blue-500 to-blue-700'} rounded-xl shadow-xl ${isDark ? 'shadow-purple-900/60' : 'shadow-blue-900/60'} transition-transform duration-200 hover:scale-105 mb-4`}>
-                            {isDark ? (
-                                <LayoutDashboard size={22} className="text-white drop-shadow-sm" />
-                            ) : (
-                                <Users size={22} className="text-white drop-shadow-sm" />
-                            )}
+                    <div className="col-span-1 md:col-span-1 flex flex-col items-start pr-4">
+                        <div className="flex items-center gap-3 mb-5">
+                            <div className="p-2.5 bg-blue-600 rounded-lg shadow-md shadow-blue-600/20">
+                                <LayoutDashboard size={20} className="text-white drop-shadow-sm" />
+                            </div>
+                            <h2 className="text-xl font-bold tracking-tight text-gray-900">NovaCorp Pro</h2>
                         </div>
-                        <h2 className={`text-xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'} transition-colors duration-200`}>FeedbackPro AI</h2>
-                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} mt-2 text-center md:text-left`}>
-                            Hệ thống quản lý phản hồi khách hàng thông minh
+                        <p className="text-sm text-gray-500 leading-relaxed">
+                            Giải pháp thông minh quản lý và phân tích phản hồi khách hàng toàn diện bằng sức mạnh Trí tuệ Nhân tạo.
                         </p>
                     </div>
 
-                    {/* Navigation Links */}
-                    <div className="flex flex-col items-center md:items-start">
-                        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Điều hướng</h3>
-                        <nav className="flex flex-col gap-2">
+                    {/* Navigation */}
+                    <div>
+                        <h3 className="text-xs font-bold tracking-widest text-gray-900 uppercase mb-6">Tính năng chính</h3>
+                        <nav className="flex flex-col gap-4">
                             <Link
                                 href="/dashboard"
-                                className={`flex items-center gap-2 text-sm font-medium transition-all duration-200 hover:scale-105 ${pathname === '/dashboard' ? (isDark ? 'text-purple-300' : 'text-blue-600') : (isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900')}`}
+                                className={`text-sm flex items-center gap-3 transition-colors ${pathname === '/dashboard' ? 'text-blue-600 font-medium' : 'text-gray-500 hover:text-blue-600'}`}
                             >
-                                <LayoutDashboard size={16} /> Dashboard
+                                <LayoutDashboard size={16} /> Bảng điều khiển
                             </Link>
                             <Link
                                 href="/customers"
-                                className={`flex items-center gap-2 text-sm font-medium transition-all duration-200 hover:scale-105 ${pathname === '/customers' ? (isDark ? 'text-purple-300' : 'text-blue-600') : (isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900')}`}
+                                className={`text-sm flex items-center gap-3 transition-colors ${pathname === '/customers' ? 'text-blue-600 font-medium' : 'text-gray-500 hover:text-blue-600'}`}
                             >
-                                <Users size={16} /> Khách hàng (CRM)
+                                <Users size={16} /> Khách hàng CRM
+                            </Link>
+                            <Link
+                                href="/settings"
+                                className={`text-sm flex items-center gap-3 transition-colors ${pathname === '/settings' ? 'text-blue-600 font-medium' : 'text-gray-500 hover:text-blue-600'}`}
+                            >
+                                <SettingsIcon size={16} /> Thiết lập tài khoản
                             </Link>
                         </nav>
                     </div>
 
+                    {/* Legal */}
+                    <div>
+                        <h3 className="text-xs font-bold tracking-widest text-gray-900 uppercase mb-6">Hỗ trợ & Chính sách</h3>
+                        <nav className="flex flex-col gap-4">
+                            <a href="#" className="text-sm flex items-center gap-3 text-gray-500 hover:text-blue-600 transition-colors">
+                                <ShieldCheck size={16} /> Chính sách bảo mật
+                            </a>
+                            <a href="#" className="text-sm flex items-center gap-3 text-gray-500 hover:text-blue-600 transition-colors">
+                                <FileText size={16} /> Điều khoản sử dụng
+                            </a>
+                        </nav>
+                    </div>
+
                     {/* Contact Info */}
-                    <div className="flex flex-col items-center md:items-start">
-                        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Liên hệ</h3>
-                        <div className="flex flex-col gap-2">
-                            <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                <Mail size={16} />
-                                <span>support@feedbackpro.ai</span>
+                    <div>
+                        <h3 className="text-xs font-bold tracking-widest text-gray-900 uppercase mb-6">Liên hệ</h3>
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center gap-3 text-sm text-gray-500 group">
+                                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">
+                                    <Mail size={14} className="text-blue-600" />
+                                </div>
+                                <span className="group-hover:text-blue-600 cursor-pointer transition-colors">support@novacorp.com</span>
                             </div>
-                            <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                <Phone size={16} />
-                                <span>+84 123 456 789</span>
+                            <div className="flex items-center gap-3 text-sm text-gray-500 group">
+                                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">
+                                    <Phone size={14} className="text-blue-600" />
+                                </div>
+                                <span className="group-hover:text-blue-600 cursor-pointer transition-colors">+84 1900 9999</span>
                             </div>
-                            <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                <MapPin size={16} />
-                                <span>Hà Nội, Việt Nam</span>
+                            <div className="flex items-center gap-3 text-sm text-gray-500 group">
+                                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">
+                                    <MapPin size={14} className="text-blue-600" />
+                                </div>
+                                <span>Tòa nhà Lotte Center, Ba Đình, Hà Nội</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Copyright */}
-                <div className={`border-t ${isDark ? 'border-gray-700' : 'border-gray-300'} mt-8 pt-6 text-center`}>
-                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                        © 2026 FeedbackPro AI. Tất cả quyền được bảo lưu.
+                <div className="border-t border-gray-100 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <p className="text-sm text-gray-400">
+                        &copy; 2026 NovaCorp Pro. Hệ thống phân tích AI.
                     </p>
+                    <div className="flex items-center gap-4 text-sm text-gray-400 font-medium">
+                        <span>Phiên bản 1.0.0</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
+                        <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Hệ thống khả dụng</span>
+                    </div>
                 </div>
             </div>
         </footer>

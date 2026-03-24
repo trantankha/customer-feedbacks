@@ -26,8 +26,11 @@ export default function LoginPage() {
                 password: password
             });
 
-            // Store the token
+            // Store the tokens
             localStorage.setItem('access_token', response.data.access_token);
+            if (response.data.refresh_token) {
+                localStorage.setItem('refresh_token', response.data.refresh_token);
+            }
 
             // Redirect to dashboard
             router.push('/dashboard');
