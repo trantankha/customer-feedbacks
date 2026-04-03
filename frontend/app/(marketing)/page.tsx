@@ -1,17 +1,23 @@
-import Image from 'next/image';
+'use client';
+
 import Link from 'next/link';
-import { ArrowRight, BarChart3, UploadCloud, Chrome } from 'lucide-react';
+import { ArrowRight, BarChart3, UploadCloud, Chrome, Check, Star } from 'lucide-react';
+import { useState } from 'react';
 
 export default function LandingPage() {
+    const [isAnnual, setIsAnnual] = useState(false);
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
             {/* Navigation Header */}
             <header className="flex items-center justify-between px-8 py-5 bg-white border-b border-gray-100">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-xl">
-                        R
+                    <div className="w-8 h-8 bg-[#0000CC] rounded flex items-center justify-center text-white">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
                     </div>
-                    <span className="font-bold text-xl text-gray-900 tracking-tight">ReviewAI</span>
+                    <span className="font-bold text-xl text-gray-900 tracking-tight">NovaCorp Pro</span>
                 </div>
 
                 <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
@@ -57,9 +63,21 @@ export default function LandingPage() {
 
                     <div className="mt-10 flex items-center gap-4">
                         <div className="flex -space-x-3">
-                            <div className="w-10 h-10 rounded-full bg-gray-200 border-2 border-white"></div>
-                            <div className="w-10 h-10 rounded-full bg-gray-300 border-2 border-white"></div>
-                            <div className="w-10 h-10 rounded-full bg-gray-400 border-2 border-white"></div>
+                            <img
+                                src="https://api.dicebear.com/9.x/avataaars/svg?seed=customer1&backgroundColor=b6e3f4"
+                                alt="Customer"
+                                className="w-10 h-10 rounded-full border-2 border-white object-cover"
+                            />
+                            <img
+                                src="https://api.dicebear.com/9.x/avataaars/svg?seed=customer2&backgroundColor=c0aede"
+                                alt="Customer"
+                                className="w-10 h-10 rounded-full border-2 border-white object-cover"
+                            />
+                            <img
+                                src="https://api.dicebear.com/9.x/avataaars/svg?seed=customer3&backgroundColor=ffd5dc"
+                                alt="Customer"
+                                className="w-10 h-10 rounded-full border-2 border-white object-cover"
+                            />
                         </div>
                         <p className="text-sm text-gray-500 font-medium">Hơn 2,000+ chủ shop tin dùng</p>
                     </div>
@@ -148,8 +166,160 @@ export default function LandingPage() {
                 </div>
             </section>
 
+            {/* Pricing Section */}
+            <section className="py-12 bg-gray-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl font-bold text-gray-900 mb-4">Bảng giá linh hoạt</h2>
+                        <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+                            Chọn gói phù hợp với nhu cầu kinh doanh của bạn. Nâng cấp hoặc hạ cấp bất cứ lúc nào.
+                        </p>
+
+                        {/* Billing Toggle */}
+                        <div className="flex items-center justify-center gap-4">
+                            <span className={`text-sm font-medium ${!isAnnual ? 'text-gray-900' : 'text-gray-500'}`}>
+                                Thanh toán tháng
+                            </span>
+                            <button
+                                onClick={() => setIsAnnual(!isAnnual)}
+                                className={`relative w-14 h-7 rounded-full transition-colors ${isAnnual ? 'bg-blue-600' : 'bg-gray-300'}`}
+                            >
+                                <div
+                                    className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-sm transition-transform ${isAnnual ? 'translate-x-7' : 'translate-x-0'}`}
+                                ></div>
+                            </button>
+                            <span className={`text-sm font-medium ${isAnnual ? 'text-gray-900' : 'text-gray-500'}`}>
+                                Thanh toán năm
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 text-green-600 text-xs font-semibold">
+                                Tiết kiệm 20%
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                        {/* Basic Plan */}
+                        <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:shadow-lg transition-shadow">
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Cơ Bản</h3>
+                            <p className="text-gray-500 text-sm mb-6">Dành cho người mới bắt đầu</p>
+                            <div className="mb-6">
+                                <span className="text-4xl font-bold text-gray-900">
+                                    {isAnnual ? '79k' : '99k'}
+                                </span>
+                                <span className="text-gray-500 text-sm">/tháng</span>
+                            </div>
+                            <Link
+                                href="/register"
+                                className="block w-full py-3 rounded-lg border-2 border-gray-200 text-gray-700 font-medium text-center hover:border-blue-600 hover:text-blue-600 transition-colors"
+                            >
+                                Bắt đầu miễn phí
+                            </Link>
+                            <ul className="mt-8 space-y-4">
+                                <li className="flex items-start gap-3">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600 text-sm">500 đánh giá/tháng</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600 text-sm">Phân tích cảm xúc cơ bản</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600 text-sm">Xuất báo cáo CSV</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600 text-sm">Hỗ trợ qua email</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Professional Plan - Popular */}
+                        <div className="relative bg-white p-8 rounded-2xl border-2 border-blue-600 shadow-xl scale-105 z-10">
+                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-blue-600 text-white text-xs font-semibold rounded-full flex items-center gap-1">
+                                <Star className="w-3 h-3" />
+                                Phổ biến nhất
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Chuyên Nghiệp</h3>
+                            <p className="text-gray-500 text-sm mb-6">Dành cho shop đang phát triển</p>
+                            <div className="mb-6">
+                                <span className="text-4xl font-bold text-gray-900">
+                                    {isAnnual ? '239k' : '299k'}
+                                </span>
+                                <span className="text-gray-500 text-sm">/tháng</span>
+                            </div>
+                            <Link
+                                href="/register"
+                                className="block w-full py-3 rounded-lg bg-blue-600 text-white font-medium text-center hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+                            >
+                                Dùng thử 7 ngày miễn phí
+                            </Link>
+                            <ul className="mt-8 space-y-4">
+                                <li className="flex items-start gap-3">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600 text-sm">5,000 đánh giá/tháng</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600 text-sm">Extension Chrome tự động</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600 text-sm">Báo cáo chi tiết + biểu đồ</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600 text-sm">Phân tích Facebook & Shopee</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600 text-sm">Hỗ trợ ưu tiên</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Enterprise Plan */}
+                        <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:shadow-lg transition-shadow">
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Doanh Nghiệp</h3>
+                            <p className="text-gray-500 text-sm mb-6">Cho team & doanh nghiệp lớn</p>
+                            <div className="mb-6">
+                                <span className="text-4xl font-bold text-gray-900">Liên hệ</span>
+                            </div>
+                            <Link
+                                href="/contact"
+                                className="block w-full py-3 rounded-lg border-2 border-gray-200 text-gray-700 font-medium text-center hover:border-blue-600 hover:text-blue-600 transition-colors"
+                            >
+                                Liên hệ tư vấn
+                            </Link>
+                            <ul className="mt-8 space-y-4">
+                                <li className="flex items-start gap-3">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600 text-sm">Không giới hạn đánh giá</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600 text-sm">API access</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600 text-sm">Multi-user & phân quyền</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600 text-sm">Hỗ trợ riêng & SLA</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600 text-sm">Tùy chỉnh theo yêu cầu</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* CTA Footer */}
-            <section className="py-24 bg-white">
+            <section className="py-24 bg-gray-50">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center bg-blue-700 text-white p-16 rounded-[2.5rem] shadow-2xl shadow-blue-600/20">
                     <h2 className="text-4xl font-bold mb-6">Sẵn sàng thấu hiểu khách hàng của bạn?</h2>
                     <p className="text-blue-100 text-lg mb-10 max-w-2xl mx-auto">
@@ -165,13 +335,6 @@ export default function LandingPage() {
                     </div>
                 </div>
             </section>
-
-            {/* Simple Footer */}
-            <footer className="bg-gray-50 py-12 border-t border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 text-center text-gray-400 text-sm">
-                    &copy; 2026 ReviewAI. Mọi quyền được bảo lưu.
-                </div>
-            </footer>
         </div>
     );
 }

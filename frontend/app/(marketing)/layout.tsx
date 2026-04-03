@@ -1,3 +1,5 @@
+import Footer from '@/components/Footer';
+
 export default function MarketingLayout({
     children,
 }: Readonly<{
@@ -6,6 +8,7 @@ export default function MarketingLayout({
     return (
         <div className="flex flex-col min-h-screen">
             {children}
+            <Footer />
         </div>
     );
 }
