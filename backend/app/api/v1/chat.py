@@ -23,9 +23,33 @@ def chat_with_data(
 
     context_data = []
     for f in recent_feedbacks:
+        # Get platform info
+        platform = "Unknown"
+        if f.source:
+            platform = f.source.platform or "Unknown"
+        
+        # Get customer info from JSONB
+        customer_name = "Ẩn danh"
+        if f.customer_info and isinstance(f.customer_info, dict):
+            customer_name = f.customer_info.get("name", "Ẩn danh")
+        
+        # Get analysis data
+        category = "Chưa xác định"
+        keywords = []
+        sentiment_label = "Unknown"
+        if f.analysis:
+            category = f.analysis.category or "Chưa xác định"
+            keywords = f.analysis.keywords or []
+            sentiment_label = f.analysis.sentiment_label or "Unknown"
+        
         context_data.append({
             "content": f.raw_content,
-            "label": f.analysis.sentiment_label if f.analysis else "Unknown",
+            "label": sentiment_label,
+            "platform": platform,
+            "customer_name": customer_name,
+            "received_at": f.received_at.isoformat() if f.received_at else None,
+            "category": category,
+            "keywords": keywords,
         })
 
     answer = gemini_service.ask_gemini_about_data(payload.question, context_data)

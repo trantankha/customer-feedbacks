@@ -7,14 +7,14 @@ import ReactMarkdown from 'react-markdown';
 
 // --- NGÂN HÀNG CÂU HỎI MẪU ---
 const SAMPLE_QUESTIONS = [
-    "Khách hàng đang phàn nàn về vấn đề gì nhiều nhất?",
-    "Tóm tắt các điểm mạnh và điểm yếu của shop trong tuần qua.",
-    "Có phát hiện dấu hiệu khách hàng 'bom hàng' hay lừa đảo không?",
-    "So sánh thái độ khách hàng giữa Facebook và Shopee.",
-    "Đề xuất 3 hành động cụ thể để cải thiện CSKH ngay lập tức.",
-    "Ai là khách hàng 'fan cứng' tích cực nhất?",
-    "Phân tích xu hướng cảm xúc của khách hàng theo thời gian.",
-    "Viết một mẫu tin nhắn xin lỗi gửi cho các khách hàng đang tức giận."
+    "Vấn đề nào khách hàng phàn nàn nhiều nhất?",
+    "Thái độ khách hàng hôm nay tích cực hay tiêu cực?",
+    "Nền tảng nào có nhiều phàn nàn nhất?",
+    "Đâu là điểm mạnh và điểm yếu của shop?",
+    "Có khách hàng nào cần xử lý gấp không?",
+    "Đề xuất 3 việc cần làm ngay để cải thiện?",
+    "Nhóm sản phẩm/dịch vụ nào bị chê nhiều?",
+    "Viết mẫu tin nhắn xin lỗi khách hàng đang giận."
 ];
 
 export default function ChatWidget() {

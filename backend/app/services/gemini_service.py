@@ -58,7 +58,22 @@ def ask_gemini_about_data(question: str, context_data: list) -> str:
 
     data_text = ""
     for item in context_data:
-        data_text += f"- [{item['label']}] {item['content']}\n"
+        platform = item.get("platform", "Unknown")
+        customer = item.get("customer_name", "Ẩn danh")
+        received_at = item.get("received_at", "N/A")
+        category = item.get("category", "Chưa xác định")
+        keywords = ", ".join(item.get("keywords", []))
+        label = item.get("label", "Unknown")
+        content = item.get("content", "")
+        
+        data_text += f"- **Nền tảng:** {platform}\n"
+        data_text += f"  **Khách hàng:** {customer}\n"
+        data_text += f"  **Thời gian:** {received_at}\n"
+        data_text += f"  **Danh mục:** {category}\n"
+        if keywords:
+            data_text += f"  **Từ khóa:** {keywords}\n"
+        data_text += f"  **Thái độ:** {label}\n"
+        data_text += f"  **Nội dung:** {content}\n\n"
 
     prompt = f"""
     Bạn là một trợ lý phân tích dữ liệu chuyên nghiệp (Data Analyst).
@@ -73,8 +88,9 @@ def ask_gemini_about_data(question: str, context_data: list) -> str:
 
     Yêu cầu:
     - Trả lời ngắn gọn, đi thẳng vào vấn đề.
-    - Dẫn chứng cụ thể.
+    - Dẫn chứng cụ thể (trích dẫn nội dung, nền tảng, khách hàng cụ thể).
     - Đề xuất giải pháp nếu cần.
+    - Nếu câu hỏi yêu cầu dữ liệu không có trong context (ví dụ: so sánh nền tảng mà không có data của nền tảng đó), hãy nói rõ giới hạn này và đưa ra phân tích dựa trên data hiện có.
     """
 
     try:
