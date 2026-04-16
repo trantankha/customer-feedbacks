@@ -60,16 +60,11 @@ celery_app.conf.update(
     worker_disable_rate_limits=True,
 )
 
-# Optional: Define periodic tasks (for future use)
+# Optional: Define periodic tasks
 celery_app.conf.beat_schedule = {
-    # Example: Run monitoring check every hour
-    # "check-monitor-tasks": {
-    #     "task": "app.services.tasks.run_monitor_checks",
-    #     "schedule": crontab(minute=0),  # Every hour
-    # },
-    # Example: Send daily summary at 8 AM
-    # "send-daily-summary": {
-    #     "task": "app.services.tasks.send_daily_summary",
-    #     "schedule": crontab(hour=8, minute=0),
-    # },
+    # Run the archiving task every day at 2:00 AM
+    "archive-old-feedbacks": {
+        "task": "app.services.tasks.archive_old_feedbacks_task",
+        "schedule": crontab(hour=2, minute=0),
+    },
 }

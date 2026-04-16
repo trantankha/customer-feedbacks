@@ -50,3 +50,17 @@ def analyze_customer(
         "history_count": len(history),
         "insight": insight,
     }
+
+
+@router.get("/journey/{name}")
+def get_customer_journey_api(
+    name: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get the customer sentiment journey line data."""
+    journey = customer_service.get_customer_journey(db, name)
+    return {
+        "customer": name,
+        "journey": journey
+    }

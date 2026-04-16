@@ -3,7 +3,7 @@ Celery tasks for background processing.
 """
 import pandas as pd
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 from uuid import UUID
 from dateutil import parser
@@ -272,3 +272,41 @@ def send_email_task(self, to_email: str, subject: str, html_content: str):
         logger.error(f"Failed to send email to {to_email}. Retrying...")
         raise Exception("Resend delivery failed")
     return {"status": "success", "to": to_email}
+
+@celery_app.task(bind=True)
+def archive_old_feedbacks_task(self, days_old: int = 30):
+    """
+    Celery periodic task to archive feedback older than X days.
+    It clears out the raw_content (to save space) but keeps the analysis results
+    and customer_info metadata.
+    """
+    from app.models import Feedback
+    db = SessionLocal()
+    try:
+        cutoff_date = datetime.now() - timedelta(days=days_old)
+        
+        # Find all feedbacks older than cutoff_date that still have raw_content
+        feedbacks = db.query(Feedback).filter(
+            Feedback.received_at < cutoff_date,
+            Feedback.raw_content != "[Đã lưu trữ để tiết kiệm bộ nhớ]",
+            Feedback.raw_content != ""
+        ).all()
+        
+        if not feedbacks:
+            logger.info("No old feedbacks to archive today.")
+            return {"status": "success", "archived_count": 0}
+            
+        count = 0
+        for f in feedbacks:
+            f.raw_content = "[Đã lưu trữ để tiết kiệm bộ nhớ]"
+            count += 1
+            
+        db.commit()
+        logger.info(f"Archived {count} feedbacks older than {days_old} days.")
+        return {"status": "success", "archived_count": count}
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error archiving feedbacks: {e}")
+        return {"status": "error", "message": str(e)}
+    finally:
+        db.close()

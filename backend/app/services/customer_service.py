@@ -51,6 +51,14 @@ def get_customer_profiles(
             trend = "Khó tính"
         else:
             trend = "Trung lập"
+            
+        group_sorted = group.sort_values(by="date", ascending=False)
+        is_churn_warning = False
+        
+        if total >= 2:
+            last_two_labels = group_sorted["label"].head(2).tolist()
+            if last_two_labels.count("NEGATIVE") == 2:
+                is_churn_warning = True
 
         profiles.append({
             "name": name,
@@ -60,6 +68,7 @@ def get_customer_profiles(
             "avg_score": avg_score,
             "last_interaction": str(group["date"].max()),
             "sentiment_trend": trend,
+            "is_churn_warning": is_churn_warning,
         })
 
     profiles.sort(key=lambda x: x["total_comments"], reverse=True)
@@ -89,3 +98,22 @@ def get_customer_history(
             if len(history) >= limit:
                 break
     return history
+
+
+def get_customer_journey(db: Session, customer_name: str) -> List[Dict[str, Any]]:
+    """Get sentiment journey for a customer."""
+    all_feedbacks = (
+        db.query(Feedback).order_by(Feedback.received_at.asc()).all()
+    )
+    
+    journey = []
+    for f in all_feedbacks:
+        if f.customer_info and f.customer_info.get("name") == customer_name:
+            if f.analysis:
+                journey.append({
+                    "date": f.received_at.strftime("%Y-%m-%d %H:%M"),
+                    "score": round(f.analysis.sentiment_score, 2) if f.analysis.sentiment_score is not None else 0,
+                    "label": f.analysis.sentiment_label,
+                    "category": f.analysis.category,
+                })
+    return journey

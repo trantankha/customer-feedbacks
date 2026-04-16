@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { User, ShoppingBag, Facebook, Star, X, Sparkles, Loader2, Globe, LayoutDashboard, Users, Music } from 'lucide-react';
+import { User, ShoppingBag, Facebook, Star, X, Sparkles, Loader2, Globe, LayoutDashboard, Users, Music, Activity } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
 export default function CustomersPage() {
     const [customers, setCustomers] = useState<any[]>([]);
@@ -19,6 +20,11 @@ export default function CustomersPage() {
     const [analysisResult, setAnalysisResult] = useState<string>("");
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [sources, setSources] = useState<any[]>([]);
+
+    // State mới cho Tabs và Journey Data
+    const [activeTab, setActiveTab] = useState<'analysis' | 'journey'>('analysis');
+    const [journeyData, setJourneyData] = useState<any[]>([]);
+    const [isLoadingJourney, setIsLoadingJourney] = useState(false);
 
     useEffect(() => {
         fetchCustomers(currentPage);
@@ -40,10 +46,23 @@ export default function CustomersPage() {
             });
     };
 
+    const fetchJourneyData = async (name: string) => {
+        setIsLoadingJourney(true);
+        try {
+            const res = await api.get(`/customers/journey/${name}`);
+            setJourneyData(res.data.journey || []);
+        } catch (err) {
+            console.error("Lỗi lấy journey:", err);
+        } finally {
+            setIsLoadingJourney(false);
+        }
+    };
+
     // Hàm xử lý khi bấm vào khách hàng
     const handleAnalyzeClick = async (name: string) => {
         setSelectedCustomer(name);
         setAnalysisResult(""); // Reset kết quả cũ
+        setActiveTab('analysis'); // Reset tab về Analysis
         setIsAnalyzing(true); // Bật loading
 
         try {
@@ -56,9 +75,17 @@ export default function CustomersPage() {
         }
     };
 
+    const handleTabChange = (tab: 'analysis' | 'journey') => {
+        setActiveTab(tab);
+        if (tab === 'journey' && selectedCustomer) {
+            fetchJourneyData(selectedCustomer);
+        }
+    };
+
     const closeModal = () => {
         setSelectedCustomer(null);
         setAnalysisResult("");
+        setJourneyData([]);
     };
 
     const getPlatformInfo = (sourceId: string | undefined | null) => {
@@ -143,6 +170,11 @@ export default function CustomersPage() {
                                                 }`}>
                                                 {c.sentiment_trend}
                                             </span>
+                                            {c.is_churn_warning && (
+                                                <span title="Phát hiện 2 tương tác lập tức gần nhất là Tiêu cực" className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-600 animate-pulse border border-red-200 shadow-sm cursor-help">
+                                                    🚨 Rủi ro Rời bỏ
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="p-4 text-center">
                                             <button
@@ -211,32 +243,95 @@ export default function CustomersPage() {
                     <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden m-4 flex flex-col max-h-[90vh]">
 
                         {/* Header Modal */}
-                        <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-6 text-white flex justify-between items-start">
-                            <div>
-                                <h2 className="text-xl font-bold flex items-center gap-2">
-                                    <Sparkles className="text-yellow-300" />
-                                    Hồ sơ Điệp viên AI
-                                </h2>
-                                <p className="text-white/80 text-sm mt-1">Đối tượng: <span className="font-bold text-white">{selectedCustomer}</span></p>
+                        <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-6 pb-2 text-white flex justify-between items-start">
+                            <div className="w-full">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h2 className="text-xl font-bold flex items-center gap-2">
+                                            <Sparkles className="text-yellow-300" />
+                                            Hồ sơ Điệp viên AI & Hành trình
+                                        </h2>
+                                        <p className="text-white/80 text-sm mt-1 mb-4">Đối tượng: <span className="font-bold text-white">{selectedCustomer}</span></p>
+                                    </div>
+                                    <button onClick={closeModal} className="text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors">
+                                        <X size={20} />
+                                    </button>
+                                </div>
+                                {/* Tabs */}
+                                <div className="flex w-full gap-2 mt-2">
+                                    <button 
+                                        onClick={() => handleTabChange('analysis')}
+                                        className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-2 ${activeTab === 'analysis' ? 'bg-white text-blue-700 shadow-sm' : 'bg-white/20 text-white hover:bg-white/30'}`}
+                                    >
+                                        <Sparkles size={16} /> Phân tích Nhận diện (Insight)
+                                    </button>
+                                    <button 
+                                        onClick={() => handleTabChange('journey')}
+                                        className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-2 ${activeTab === 'journey' ? 'bg-white text-purple-700 shadow-sm' : 'bg-white/20 text-white hover:bg-white/30'}`}
+                                    >
+                                        <Activity size={16} /> Hành trình Cảm xúc
+                                    </button>
+                                </div>
                             </div>
-                            <button onClick={closeModal} className="text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors">
-                                <X size={20} />
-                            </button>
                         </div>
 
                         {/* Body Modal */}
-                        <div className="p-6 overflow-y-auto bg-gray-50 flex-1">
-                            {isAnalyzing ? (
-                                <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                                    <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
-                                    <p className="text-gray-600 font-medium animate-pulse">Đang đọc lén lịch sử comment...</p>
-                                    <p className="text-xs text-gray-400">Gemini đang suy nghĩ</p>
-                                </div>
-                            ) : (
-                                <div className="prose prose-sm max-w-none text-gray-800">
-                                    {/* Hiển thị Markdown kết quả */}
-                                    <ReactMarkdown>{analysisResult}</ReactMarkdown>
-                                </div>
+                        <div className="p-6 overflow-y-auto bg-white flex-1 min-h-[300px]">
+                            {activeTab === 'analysis' && (
+                                isAnalyzing ? (
+                                    <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                                        <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+                                        <p className="text-gray-600 font-medium animate-pulse">Đang yêu cầu Gemini đóng vai Điệp viên trích xuất Insight...</p>
+                                        <p className="text-xs text-gray-400">Điều này có thể mất vài giây</p>
+                                    </div>
+                                ) : (
+                                    <div className="prose prose-sm max-w-none text-gray-800">
+                                        {/* Hiển thị Markdown kết quả */}
+                                        <ReactMarkdown>{analysisResult}</ReactMarkdown>
+                                    </div>
+                                )
+                            )}
+
+                            {activeTab === 'journey' && (
+                                isLoadingJourney ? (
+                                    <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                                        <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+                                        <p className="text-gray-500 text-sm">Đang tải lịch sử hành trình...</p>
+                                    </div>
+                                ) : journeyData.length === 0 ? (
+                                    <div className="flex items-center justify-center py-12 text-gray-500">
+                                        Khách hàng này chưa có dữ liệu hành trình cảm xúc hoặc chỉ có 1 điểm chạm đầu tiên!
+                                    </div>
+                                ) : (
+                                    <div className="w-full h-full flex flex-col">
+                                        <h3 className="text-sm font-bold text-gray-700 mb-6 flex items-center justify-between">
+                                            Biểu đồ Xu hướng Chỉ số Cảm xúc
+                                            <span className="text-xs font-normal text-purple-600 bg-purple-50 px-2 py-1 rounded">Score -1 (Cực Đoan) 👉 1 (Tuyệt Vời)</span>
+                                        </h3>
+                                        <div className="h-[250px] w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <LineChart data={journeyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                                    <XAxis dataKey="date" tick={{fontSize: 10}} tickMargin={10} minTickGap={30} />
+                                                    <YAxis domain={[-1, 1]} ticks={[-1, -0.5, 0, 0.5, 1]} tick={{fontSize: 10}} />
+                                                    <RechartsTooltip 
+                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                    />
+                                                    <Line 
+                                                        type="monotone" 
+                                                        dataKey="score" 
+                                                        name="Điểm Cảm xúc" 
+                                                        stroke="#8b5cf6" 
+                                                        strokeWidth={3} 
+                                                        dot={{r: 4, strokeWidth: 2, fill: "white", stroke: "#8b5cf6"}} 
+                                                        activeDot={{r: 6, fill: "#8b5cf6"}} 
+                                                        animationDuration={1500}
+                                                    />
+                                                </LineChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                )
                             )}
                         </div>
 
