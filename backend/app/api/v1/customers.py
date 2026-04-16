@@ -64,3 +64,19 @@ def get_customer_journey_api(
         "customer": name,
         "journey": journey
     }
+
+@router.post("/predict-churn")
+def predict_customer_churn(
+    payload: CustomerAnalyzeRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Predict customer churn using AI."""
+    history = customer_service.get_customer_history(db, payload.name)
+    result = gemini_service.predict_churn_and_script(payload.name, history)
+    
+    return {
+        "customer": payload.name,
+        "probability": result["probability"],
+        "action_plan": result["action_plan"]
+    }

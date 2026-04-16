@@ -284,3 +284,71 @@ Trả về kết quả ĐÚNG định dạng JSON sau (không chứa markdown ma
             logger.debug(f"Gemini keyword extraction error (non-blocking): {e}")
         return default_result
 
+
+def predict_churn_and_script(customer_name: str, history: list) -> dict:
+    """
+    Use Gemini to predict churn probability and output action plan.
+    Returns: {"probability": 85, "action_plan": "Markdown script..."}
+    """
+    default_result = {"probability": 0, "action_plan": "Hệ thống AI đang bận, không thể xuất kịch bản."}
+
+    if not client:
+        return default_result
+
+    if not history:
+        return {"probability": 0, "action_plan": "Khách hàng này chưa có dữ liệu lịch sử để dự đoán."}
+
+    history_text = ""
+    for h in history:
+        date_str = h.get("date", "N/A")
+        source_str = h.get("source", "Unknown")
+        label_str = h.get("label", "Unknown")
+        content_str = h.get("content", "") or h.get("raw_content", "")
+        history_text += f"- [{date_str}] [{source_str}] ({label_str}): {content_str}\n"
+
+    prompt = f"""
+    Bạn là một chuyên gia Chăm sóc khách hàng và Phân tích Dữ liệu Dự đoán Rời bỏ (Churn Prediction).
+    Dưới đây là lịch sử phản hồi của khách hàng tên "{customer_name}":
+
+    --- LỊCH SỬ ---
+    {history_text}
+    --- KẾT THÚC ---
+
+    Yêu cầu:
+    Dựa vào mức độ chê khen, tính thường xuyên dần và độ nghiêm trọng của các đánh giá tiêu cực gần đây, hãy dự đoán phần trăm (%) khả năng người này sẽ KHÔNG MUA HÀNG NỮA (từ bỏ sản phẩm/dịch vụ). Tỉ lệ từ 0 đến 100.
+    Sau đó, đưa ra một "Kịch bản gọi điện thoại CSKH" thực tế, khéo léo để xoa dịu và lôi kéo họ ở lại.
+
+    TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON sau (ĐỪNG chứa markdown markdown block ```json):
+    {{
+      "probability": 85,
+      "action_plan": "Nội dung lời gọi điện thoại..."
+    }}
+    """
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+
+        raw_text = response.text.strip()
+        if raw_text.startswith("```json"):
+            raw_text = raw_text[7:]
+        if raw_text.startswith("```"):
+            raw_text = raw_text[3:]
+        if raw_text.endswith("```"):
+            raw_text = raw_text[:-3]
+
+        parsed_data = json.loads(raw_text.strip())
+        
+        prob = int(parsed_data.get("probability", 0))
+        action = parsed_data.get("action_plan", "")
+        
+        return {
+            "probability": prob,
+            "action_plan": action
+        }
+        
+    except Exception as e:
+        logger.error(f"Gemini churn logic error: {e}")
+        return default_result

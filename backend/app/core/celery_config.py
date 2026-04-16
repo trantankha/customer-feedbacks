@@ -62,9 +62,10 @@ celery_app.conf.update(
 
 # Optional: Define periodic tasks
 celery_app.conf.beat_schedule = {
-    # Run the archiving task every day at 2:00 AM
+    # Môi trường Dev/Local: Chạy mỗi 5 phút một lần để dễ dàng test tính năng dọn dẹp bộ nhớ
+    # (Khi lên Production có thể đổi lại thành crontab(hour=2, minute=0) để chạy lúc 2h sáng)
     "archive-old-feedbacks": {
         "task": "app.services.tasks.archive_old_feedbacks_task",
-        "schedule": crontab(hour=2, minute=0),
+        "schedule": crontab(minute='*/5'),
     },
 }

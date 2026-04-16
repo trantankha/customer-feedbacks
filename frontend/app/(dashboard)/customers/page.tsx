@@ -25,6 +25,10 @@ export default function CustomersPage() {
     const [activeTab, setActiveTab] = useState<'analysis' | 'journey'>('analysis');
     const [journeyData, setJourneyData] = useState<any[]>([]);
     const [isLoadingJourney, setIsLoadingJourney] = useState(false);
+    
+    // State cho Churn Prediction
+    const [isPredictingChurn, setIsPredictingChurn] = useState(false);
+    const [churnResult, setChurnResult] = useState<{probability: number, action_plan: string} | null>(null);
 
     useEffect(() => {
         fetchCustomers(currentPage);
@@ -63,6 +67,7 @@ export default function CustomersPage() {
         setSelectedCustomer(name);
         setAnalysisResult(""); // Reset kết quả cũ
         setActiveTab('analysis'); // Reset tab về Analysis
+        setChurnResult(null); // Reset churn
         setIsAnalyzing(true); // Bật loading
 
         try {
@@ -72,6 +77,20 @@ export default function CustomersPage() {
             setAnalysisResult("❌ Lỗi: Không thể phân tích khách hàng này lúc này.");
         } finally {
             setIsAnalyzing(false);
+        }
+    };
+
+    const handlePredictChurn = async () => {
+        if (!selectedCustomer) return;
+        setIsPredictingChurn(true);
+        try {
+            const res = await api.post('/customers/predict-churn', { name: selectedCustomer });
+            setChurnResult({ probability: res.data.probability, action_plan: res.data.action_plan });
+        } catch (err) {
+            console.error("Lỗi dự đoán rời bỏ:", err);
+            setChurnResult({ probability: 0, action_plan: "❌ Lỗi: Không thể thực hiện phân tích ngay lúc này."});
+        } finally {
+            setIsPredictingChurn(false);
         }
     };
 
@@ -86,6 +105,7 @@ export default function CustomersPage() {
         setSelectedCustomer(null);
         setAnalysisResult("");
         setJourneyData([]);
+        setChurnResult(null);
     };
 
     const getPlatformInfo = (sourceId: string | undefined | null) => {
@@ -329,6 +349,51 @@ export default function CustomersPage() {
                                                     />
                                                 </LineChart>
                                             </ResponsiveContainer>
+                                        </div>
+
+                                        {/* Khối Dự đoán Rời bỏ */}
+                                        <div className="mt-8 pt-6 border-t border-gray-100">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h3 className="text-md font-bold text-gray-800 flex items-center gap-2">
+                                                    <Sparkles className="text-amber-500" size={18} /> Chỉ số Phân tích Rời bỏ (AI Prediction)
+                                                </h3>
+                                                {!churnResult && !isPredictingChurn && (
+                                                    <button onClick={handlePredictChurn} className="text-xs cursor-pointer bg-amber-50 text-amber-600 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-amber-100 font-medium shadow-sm transition-colors flex items-center gap-1">
+                                                        <Sparkles size={14} /> Chạy Dự đoán (AI)
+                                                    </button>
+                                                )}
+                                            </div>
+                                            
+                                            {isPredictingChurn && (
+                                                <div className="flex items-center gap-2 text-sm text-gray-500 animate-pulse bg-gray-50 p-4 rounded-lg">
+                                                    <Loader2 className="w-4 h-4 animate-spin text-amber-500" /> AI Đang tổng hợp dữ liệu và sinh kịch bản chăm sóc...
+                                                </div>
+                                            )}
+                                            
+                                            {churnResult && (
+                                                <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-5 shadow-sm animate-in fade-in slide-in-from-bottom-2">
+                                                    <div className="mb-5">
+                                                        <div className="flex justify-between text-sm mb-1">
+                                                            <span className="font-semibold text-gray-600">Xác suất rời bỏ / Ngừng sử dụng</span>
+                                                            <span className="font-bold text-gray-800">{churnResult.probability}%</span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                                            <div className={`h-2.5 rounded-full transition-all duration-1000 ${churnResult.probability > 70 ? 'bg-red-500 animate-pulse' : churnResult.probability > 30 ? 'bg-amber-400' : 'bg-green-500'}`} style={{ width: `${churnResult.probability}%` }}></div>
+                                                        </div>
+                                                        <p className="text-xs text-gray-500 mt-2 italic">
+                                                            * Điểm số lấy từ mô hình Gemini Generative AI dựa trên tính thường xuyên và độ cực đoan của phản hồi.
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-sm font-semibold text-gray-800 mb-2 mt-4 flex items-center gap-1">
+                                                            💡 Kịch bản CSKH Đề xuất:
+                                                        </h4>
+                                                        <div className="prose prose-sm max-w-none text-gray-700 bg-gray-50 p-4 rounded-lg shadow-inner border border-gray-100">
+                                                            <ReactMarkdown>{churnResult.action_plan}</ReactMarkdown>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )
