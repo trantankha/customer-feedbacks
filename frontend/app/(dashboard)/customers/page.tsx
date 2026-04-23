@@ -21,13 +21,15 @@ export default function CustomersPage() {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [sources, setSources] = useState<any[]>([]);
 
+    // Đệm (Cache) kết quả AI để lưu trữ dữ liệu tại Frontend State
+    const [analysisCache, setAnalysisCache] = useState<Record<string, { insight: string, probability: number, action_plan: string }>>({});
+
     // State mới cho Tabs và Journey Data
     const [activeTab, setActiveTab] = useState<'analysis' | 'journey'>('analysis');
     const [journeyData, setJourneyData] = useState<any[]>([]);
     const [isLoadingJourney, setIsLoadingJourney] = useState(false);
     
-    // State cho Churn Prediction
-    const [isPredictingChurn, setIsPredictingChurn] = useState(false);
+    // State cho Churn Prediction (cập nhật tự động từ kết quả gốc)
     const [churnResult, setChurnResult] = useState<{probability: number, action_plan: string} | null>(null);
 
     useEffect(() => {
@@ -65,32 +67,44 @@ export default function CustomersPage() {
     // Hàm xử lý khi bấm vào khách hàng
     const handleAnalyzeClick = async (name: string) => {
         setSelectedCustomer(name);
-        setAnalysisResult(""); // Reset kết quả cũ
         setActiveTab('analysis'); // Reset tab về Analysis
+        
+        // Kiểm tra xem đã có kết quả phân tích trong Cache chưa
+        if (analysisCache[name]) {
+            setAnalysisResult(analysisCache[name].insight);
+            setChurnResult({
+                probability: analysisCache[name].probability,
+                action_plan: analysisCache[name].action_plan
+            });
+            return;
+        }
+
+        setAnalysisResult(""); // Reset kết quả cũ
         setChurnResult(null); // Reset churn
         setIsAnalyzing(true); // Bật loading
 
         try {
             const res = await api.post('/customers/analyze-profile', { name });
-            setAnalysisResult(res.data.insight);
+            const insight = res.data.insight;
+            const probability = res.data.probability;
+            const action_plan = res.data.action_plan;
+            
+            setAnalysisResult(insight);
+            setChurnResult({ probability, action_plan });
+            
+            // Xử lý ngoại lệ: Chỉ cache nếu không phải là lỗi hoặc quá tải API
+            const isRateLimitError = insight.includes("đang quá tải") || insight.includes("Hết hạn mức") || insight.includes("Lỗi");
+            if (!isRateLimitError) {
+                setAnalysisCache(prev => ({
+                    ...prev,
+                    [name]: { insight, probability, action_plan }
+                }));
+            }
         } catch (error) {
             setAnalysisResult("❌ Lỗi: Không thể phân tích khách hàng này lúc này.");
+            setChurnResult({ probability: 0, action_plan: "❌ Lỗi: Không thể xử lý dự đoán rời bỏ."});
         } finally {
             setIsAnalyzing(false);
-        }
-    };
-
-    const handlePredictChurn = async () => {
-        if (!selectedCustomer) return;
-        setIsPredictingChurn(true);
-        try {
-            const res = await api.post('/customers/predict-churn', { name: selectedCustomer });
-            setChurnResult({ probability: res.data.probability, action_plan: res.data.action_plan });
-        } catch (err) {
-            console.error("Lỗi dự đoán rời bỏ:", err);
-            setChurnResult({ probability: 0, action_plan: "❌ Lỗi: Không thể thực hiện phân tích ngay lúc này."});
-        } finally {
-            setIsPredictingChurn(false);
         }
     };
 
@@ -357,18 +371,7 @@ export default function CustomersPage() {
                                                 <h3 className="text-md font-bold text-gray-800 flex items-center gap-2">
                                                     <Sparkles className="text-amber-500" size={18} /> Chỉ số Phân tích Rời bỏ (AI Prediction)
                                                 </h3>
-                                                {!churnResult && !isPredictingChurn && (
-                                                    <button onClick={handlePredictChurn} className="text-xs cursor-pointer bg-amber-50 text-amber-600 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-amber-100 font-medium shadow-sm transition-colors flex items-center gap-1">
-                                                        <Sparkles size={14} /> Chạy Dự đoán (AI)
-                                                    </button>
-                                                )}
                                             </div>
-                                            
-                                            {isPredictingChurn && (
-                                                <div className="flex items-center gap-2 text-sm text-gray-500 animate-pulse bg-gray-50 p-4 rounded-lg">
-                                                    <Loader2 className="w-4 h-4 animate-spin text-amber-500" /> AI Đang tổng hợp dữ liệu và sinh kịch bản chăm sóc...
-                                                </div>
-                                            )}
                                             
                                             {churnResult && (
                                                 <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-5 shadow-sm animate-in fade-in slide-in-from-bottom-2">

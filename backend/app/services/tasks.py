@@ -171,7 +171,7 @@ def process_csv_import_task(self, file_contents: bytes, platform: str, user_id: 
             # If all rows were empty or failed to insert, just finalize directly
             finalize_import_task.delay([], platform, processed_count, total_rows)
 
-        return {"status": "queued_for_analysis", "queued": processed_count, "total": total_rows}
+        return {"status": "queued_for_analysis", "processed": processed_count, "total": total_rows}
 
     except Exception as e:
         logger.error(f"CSV task error: {e}")

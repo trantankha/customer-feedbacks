@@ -41,14 +41,16 @@ def analyze_customer(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Analyze customer persona with AI."""
+    """Analyze customer persona and predict churn with AI in one call."""
     history = customer_service.get_customer_history(db, payload.name)
-    insight = gemini_service.analyze_customer_persona(payload.name, history)
+    result = gemini_service.analyze_full_customer_profile(payload.name, history)
 
     return {
         "customer": payload.name,
         "history_count": len(history),
-        "insight": insight,
+        "insight": result.get("insight", "Không có dữ liệu insight"),
+        "probability": result.get("probability", 0),
+        "action_plan": result.get("action_plan", "Không có gợi ý"),
     }
 
 

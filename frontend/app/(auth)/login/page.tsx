@@ -189,12 +189,12 @@ export default function LoginPage() {
 
                     <div className="grid grid-cols-3 gap-12 w-full mt-4">
                         <div className="flex flex-col items-center">
-                            <span className="text-4xl font-bold mb-2">99%</span>
-                            <span className="text-sm text-blue-200">Độ chính xác</span>
+                            <span className="text-4xl font-bold mb-2">50k+</span>
+                            <span className="text-sm text-blue-200">Người dùng</span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-4xl font-bold mb-2">10k+</span>
-                            <span className="text-sm text-blue-200">Người dùng</span>
+                            <span className="text-4xl font-bold mb-2">99%</span>
+                            <span className="text-sm text-blue-200">Độ chính xác</span>
                         </div>
                         <div className="flex flex-col items-center">
                             <span className="text-4xl font-bold mb-2">24/7</span>

@@ -150,6 +150,98 @@ def analyze_customer_persona(customer_name: str, history: list) -> str:
         return f"Lỗi khi gọi Gemini: {e}"
 
 
+def analyze_full_customer_profile(customer_name: str, history: list) -> dict:
+    """Use Gemini to build a customer persona, predict churn, and suggest an action plan in one call."""
+    default_result = {
+        "insight": "🔥 Cảnh báo: Hệ thống AI đang quá tải (hoặc lỗi). Vui lòng thử lại sau.", 
+        "probability": 0, 
+        "action_plan": "Cảnh báo lỗi."
+    }
+
+    if not client:
+        return {
+            "insight": "Lỗi kết nối AI.",
+            "probability": 0,
+            "action_plan": "Hệ thống AI đang bận, không thể xuất kịch bản."
+        }
+
+    if not history:
+        return {
+            "insight": "Khách hàng này chưa có đủ dữ liệu lịch sử để phân tích.",
+            "probability": 0,
+            "action_plan": "Khách hàng này chưa có dữ liệu lịch sử để dự đoán."
+        }
+
+    history_text = ""
+    for h in history:
+        date_str = h.get("date", "N/A")
+        source_str = h.get("source", "Unknown")
+        label_str = h.get("label", "Unknown")
+        content_str = h.get("content", "") or h.get("raw_content", "")
+        history_text += f"- [{date_str}] [{source_str}] ({label_str}): {content_str}\n"
+
+    prompt = f"""
+    Bạn là một chuyên gia CRM, Tâm lý hành vi khách hàng và Phân tích Dự đoán Rời bỏ (Churn Prediction).
+    Hãy phân tích khách hàng tên "{customer_name}" dựa trên danh sách các tương tác lịch sử sau:
+
+    --- LỊCH SỬ TƯƠNG TÁC ---
+    {history_text}
+    --- KẾT THÚC ---
+
+    Yêu cầu thực hiện 3 việc, dựa trên mức độ tích cực/tiêu cực, tính thường xuyên và độ lớn của lịch sử phản hồi:
+    1. Insight cấu hình (1 đoạn Markdown format gồm: Tính cách, Mối quan tâm chính, Đánh giá tiềm năng, Lời khuyên chung). Giữ cho ngắn gọn.
+    2. Dự đoán xác suất phần trăm (%) rời bỏ/ngừng mua hàng (Probability từ 0 đến 100).
+    3. Đề xuất một "Kịch bản gọi điện thoại CSKH" tinh tế để xoa dịu/thuyết phục dựa theo insight trên. Trình bày bằng văn bản ngắn ngọn.
+
+    TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON sau (ĐỪNG chứa markdown tag ```json):
+    {{
+      "insight": "1. **Tính cách:**...\\n2. **Mối quan tâm:**...\\n3. **Lời khuyên:**...",
+      "churn_probability": 85,
+      "action_plan": "Chào anh/chị..."
+    }}
+    Lưu ý phần insight và action_plan hãy escape markdown formatting cẩn thận để là JSON chuẩn.
+    """
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+
+        raw_text = response.text.strip()
+        if raw_text.startswith("```json"):
+            raw_text = raw_text[7:]
+        if raw_text.startswith("```"):
+            raw_text = raw_text[3:]
+        if raw_text.endswith("```"):
+            raw_text = raw_text[:-3]
+
+        parsed_data = json.loads(raw_text.strip())
+        
+        insight = parsed_data.get("insight", "Không trích xuất được insight.")
+        prob = int(parsed_data.get("churn_probability", 0))
+        action = parsed_data.get("action_plan", "Không có gợi ý.")
+        
+        return {
+            "insight": insight,
+            "probability": prob,
+            "action_plan": action
+        }
+        
+    except Exception as e:
+        logger.error(f"Gemini full profile error: {e}")
+        error_msg = str(e)
+        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg or "quota" in error_msg.lower():
+            return {
+                "insight": "🔥 Không thể phân tích hồ sơ: Hệ thống AI đang quá tải (Hết hạn mức API). Vui lòng thử lại sau chút xíu.",
+                "probability": 0,
+                "action_plan": "🔥 AI đang quá tải."
+            }
+        return default_result
+
+
+
+
 def verify_sentiment_with_gemini(text: str, phobert_label: str) -> str:
     """
     Use Gemini as a second opinion for sentiment classification.
