@@ -28,9 +28,9 @@ export default function CustomersPage() {
     const [activeTab, setActiveTab] = useState<'analysis' | 'journey'>('analysis');
     const [journeyData, setJourneyData] = useState<any[]>([]);
     const [isLoadingJourney, setIsLoadingJourney] = useState(false);
-    
+
     // State cho Churn Prediction (cập nhật tự động từ kết quả gốc)
-    const [churnResult, setChurnResult] = useState<{probability: number, action_plan: string} | null>(null);
+    const [churnResult, setChurnResult] = useState<{ probability: number, action_plan: string } | null>(null);
 
     useEffect(() => {
         fetchCustomers(currentPage);
@@ -68,7 +68,7 @@ export default function CustomersPage() {
     const handleAnalyzeClick = async (name: string) => {
         setSelectedCustomer(name);
         setActiveTab('analysis'); // Reset tab về Analysis
-        
+
         // Kiểm tra xem đã có kết quả phân tích trong Cache chưa
         if (analysisCache[name]) {
             setAnalysisResult(analysisCache[name].insight);
@@ -88,10 +88,10 @@ export default function CustomersPage() {
             const insight = res.data.insight;
             const probability = res.data.probability;
             const action_plan = res.data.action_plan;
-            
+
             setAnalysisResult(insight);
             setChurnResult({ probability, action_plan });
-            
+
             // Xử lý ngoại lệ: Chỉ cache nếu không phải là lỗi hoặc quá tải API
             const isRateLimitError = insight.includes("đang quá tải") || insight.includes("Hết hạn mức") || insight.includes("Lỗi");
             if (!isRateLimitError) {
@@ -102,7 +102,7 @@ export default function CustomersPage() {
             }
         } catch (error) {
             setAnalysisResult("❌ Lỗi: Không thể phân tích khách hàng này lúc này.");
-            setChurnResult({ probability: 0, action_plan: "❌ Lỗi: Không thể xử lý dự đoán rời bỏ."});
+            setChurnResult({ probability: 0, action_plan: "❌ Lỗi: Không thể xử lý dự đoán rời bỏ." });
         } finally {
             setIsAnalyzing(false);
         }
@@ -168,7 +168,7 @@ export default function CustomersPage() {
                                             </p>
                                             <Link
                                                 href="/dashboard"
-                                                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                                                className="inline-flex cursor-pointer items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
                                             >
                                                 <LayoutDashboard size={16} />
                                                 Quay về Trang chủ
@@ -287,21 +287,21 @@ export default function CustomersPage() {
                                         </h2>
                                         <p className="text-white/80 text-sm mt-1 mb-4">Đối tượng: <span className="font-bold text-white">{selectedCustomer}</span></p>
                                     </div>
-                                    <button onClick={closeModal} className="text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors">
+                                    <button onClick={closeModal} className="text-white/70 cursor-pointer hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors">
                                         <X size={20} />
                                     </button>
                                 </div>
                                 {/* Tabs */}
                                 <div className="flex w-full gap-2 mt-2">
-                                    <button 
+                                    <button
                                         onClick={() => handleTabChange('analysis')}
-                                        className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-2 ${activeTab === 'analysis' ? 'bg-white text-blue-700 shadow-sm' : 'bg-white/20 text-white hover:bg-white/30'}`}
+                                        className={`px-4 py-2 cursor-pointer text-sm font-medium rounded-t-lg transition-colors flex items-center gap-2 ${activeTab === 'analysis' ? 'bg-white text-blue-700 shadow-sm' : 'bg-white/20 text-white hover:bg-white/30'}`}
                                     >
                                         <Sparkles size={16} /> Phân tích Nhận diện (Insight)
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => handleTabChange('journey')}
-                                        className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-2 ${activeTab === 'journey' ? 'bg-white text-purple-700 shadow-sm' : 'bg-white/20 text-white hover:bg-white/30'}`}
+                                        className={`px-4 py-2 cursor-pointer text-sm font-medium rounded-t-lg transition-colors flex items-center gap-2 ${activeTab === 'journey' ? 'bg-white text-purple-700 shadow-sm' : 'bg-white/20 text-white hover:bg-white/30'}`}
                                     >
                                         <Activity size={16} /> Hành trình Cảm xúc
                                     </button>
@@ -346,19 +346,19 @@ export default function CustomersPage() {
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <LineChart data={journeyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                                    <XAxis dataKey="date" tick={{fontSize: 10}} tickMargin={10} minTickGap={30} />
-                                                    <YAxis domain={[-1, 1]} ticks={[-1, -0.5, 0, 0.5, 1]} tick={{fontSize: 10}} />
-                                                    <RechartsTooltip 
+                                                    <XAxis dataKey="date" tick={{ fontSize: 10 }} tickMargin={10} minTickGap={30} />
+                                                    <YAxis domain={[-1, 1]} ticks={[-1, -0.5, 0, 0.5, 1]} tick={{ fontSize: 10 }} />
+                                                    <RechartsTooltip
                                                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                                     />
-                                                    <Line 
-                                                        type="monotone" 
-                                                        dataKey="score" 
-                                                        name="Điểm Cảm xúc" 
-                                                        stroke="#8b5cf6" 
-                                                        strokeWidth={3} 
-                                                        dot={{r: 4, strokeWidth: 2, fill: "white", stroke: "#8b5cf6"}} 
-                                                        activeDot={{r: 6, fill: "#8b5cf6"}} 
+                                                    <Line
+                                                        type="monotone"
+                                                        dataKey="score"
+                                                        name="Điểm Cảm xúc"
+                                                        stroke="#8b5cf6"
+                                                        strokeWidth={3}
+                                                        dot={{ r: 4, strokeWidth: 2, fill: "white", stroke: "#8b5cf6" }}
+                                                        activeDot={{ r: 6, fill: "#8b5cf6" }}
                                                         animationDuration={1500}
                                                     />
                                                 </LineChart>
@@ -372,7 +372,7 @@ export default function CustomersPage() {
                                                     <Sparkles className="text-amber-500" size={18} /> Chỉ số Phân tích Rời bỏ (AI Prediction)
                                                 </h3>
                                             </div>
-                                            
+
                                             {churnResult && (
                                                 <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-5 shadow-sm animate-in fade-in slide-in-from-bottom-2">
                                                     <div className="mb-5">

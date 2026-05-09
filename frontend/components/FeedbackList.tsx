@@ -31,11 +31,11 @@ export default function FeedbackList() {
         let isDefaultInterval = true;
         fetchFeedbacks();
         api.get('/sources').then(res => setSources(res.data)).catch(err => console.error(err));
-        
+
         // Nếu có feedback đang chờ AI phân tích, refresh nhanh hơn (3s), ngược lại 10s
         const hasPending = feedbacks.some(f => f.status === 'PENDING_ANALYSIS');
         const intervalTime = hasPending ? 3000 : 10000;
-        
+
         const interval = setInterval(fetchFeedbacks, intervalTime);
         return () => clearInterval(interval);
     }, [feedbacks.some(f => f.status === 'PENDING_ANALYSIS')]);
@@ -110,7 +110,7 @@ export default function FeedbackList() {
                                         <select
                                             value={tempLabel}
                                             onChange={(e) => setTempLabel(e.target.value)}
-                                            className="text-xs border rounded p-1 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="text-xs cursor-pointer border rounded p-1 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
                                         >
                                             <option value="POSITIVE">TÍCH CỰC</option>
                                             <option value="NEGATIVE">TIÊU CỰC</option>
@@ -132,7 +132,7 @@ export default function FeedbackList() {
                                         ) : (
                                             <span className={`text-[10px] font-bold px-2 py-1 rounded select-none border
                       ${item.analysis?.sentiment_label === 'POSITIVE' ? 'bg-green-50 text-green-700 border-green-200' :
-                                                item.analysis?.sentiment_label === 'NEGATIVE' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-gray-50 text-gray-700 border-gray-200'}`}>
+                                                    item.analysis?.sentiment_label === 'NEGATIVE' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-gray-50 text-gray-700 border-gray-200'}`}>
                                                 {item.analysis?.sentiment_label || 'CHƯA XỬ LÝ'}
                                             </span>
                                         )}

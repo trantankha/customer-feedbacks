@@ -44,7 +44,7 @@ export default function Footer() {
                             <li>
                                 <Link
                                     href="/dashboard"
-                                    className={`text-sm transition-colors ${pathname === '/dashboard' ? 'text-blue-400 font-medium' : 'text-gray-400 hover:text-white'}`}
+                                    className={`text-sm cursor-pointer transition-colors ${pathname === '/dashboard' ? 'text-blue-400 font-medium' : 'text-gray-400 hover:text-white'}`}
                                 >
                                     Bảng điều khiển
                                 </Link>
@@ -52,7 +52,7 @@ export default function Footer() {
                             <li>
                                 <Link
                                     href="/customers"
-                                    className={`text-sm transition-colors ${pathname === '/customers' ? 'text-blue-400 font-medium' : 'text-gray-400 hover:text-white'}`}
+                                    className={`text-sm cursor-pointer transition-colors ${pathname === '/customers' ? 'text-blue-400 font-medium' : 'text-gray-400 hover:text-white'}`}
                                 >
                                     Khách hàng CRM
                                 </Link>
@@ -60,7 +60,7 @@ export default function Footer() {
                             <li>
                                 <Link
                                     href="/settings"
-                                    className={`text-sm transition-colors ${pathname === '/settings' ? 'text-blue-400 font-medium' : 'text-gray-400 hover:text-white'}`}
+                                    className={`text-sm cursor-pointer transition-colors ${pathname === '/settings' ? 'text-blue-400 font-medium' : 'text-gray-400 hover:text-white'}`}
                                 >
                                     Thiết lập tài khoản
                                 </Link>

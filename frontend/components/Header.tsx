@@ -79,14 +79,14 @@ export default function Header({ theme = 'light', subtitle = '', actions }: Head
                     <nav className="hidden md:flex gap-6 ml-6 pl-6 border-l border-gray-200 h-8 items-center">
                         <Link
                             href="/dashboard"
-                            className={`flex items-center gap-2 text-sm font-semibold transition-all duration-200 hover:scale-105 ${pathname === '/dashboard' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'
+                            className={`flex cursor-pointer items-center gap-2 text-sm font-semibold transition-all duration-200 hover:scale-105 ${pathname === '/dashboard' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'
                                 }`}
                         >
                             <LayoutDashboard size={18} /> Dashboard
                         </Link>
                         <Link
                             href="/customers"
-                            className={`flex items-center gap-2 text-sm font-semibold transition-all duration-200 hover:scale-105 ${pathname === '/customers' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'
+                            className={`flex cursor-pointer items-center gap-2 text-sm font-semibold transition-all duration-200 hover:scale-105 ${pathname === '/customers' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'
                                 }`}
                         >
                             <Users size={18} /> Khách hàng
@@ -99,14 +99,14 @@ export default function Header({ theme = 'light', subtitle = '', actions }: Head
                     <div className="md:hidden flex gap-2 mr-2">
                         <Link
                             href="/dashboard"
-                            className={`p-2 rounded-lg transition-all duration-200 ${pathname === '/dashboard' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'
+                            className={`p-2 cursor-pointer rounded-lg transition-all duration-200 ${pathname === '/dashboard' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'
                                 }`}
                         >
                             <LayoutDashboard size={20} />
                         </Link>
                         <Link
                             href="/customers"
-                            className={`p-2 rounded-lg transition-all duration-200 ${pathname === '/customers' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'
+                            className={`p-2 cursor-pointer rounded-lg transition-all duration-200 ${pathname === '/customers' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'
                                 }`}
                         >
                             <Users size={20} />
@@ -150,14 +150,14 @@ export default function Header({ theme = 'light', subtitle = '', actions }: Head
                                     <Link
                                         href="/settings"
                                         onClick={() => setDropdownOpen(false)}
-                                        className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 rounded-xl hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                        className="flex cursor-pointer items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 rounded-xl hover:bg-blue-50 hover:text-blue-700 transition-colors"
                                     >
                                         <SettingsIcon size={16} />
                                         Hồ sơ & Cài đặt
                                     </Link>
                                     <button
                                         onClick={handleLogout}
-                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 rounded-xl hover:bg-red-50 transition-colors mt-1 focus:outline-none"
+                                        className="w-full cursor-pointer flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 rounded-xl hover:bg-red-50 transition-colors mt-1 focus:outline-none"
                                     >
                                         <LogOut size={16} />
                                         Đăng xuất

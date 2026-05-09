@@ -158,7 +158,7 @@ export default function ChatWidget() {
                             <button
                                 onClick={() => handleSend()}
                                 disabled={isLoading || !input.trim()}
-                                className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                                className="bg-blue-600 cursor-pointer text-white p-2 rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                             >
                                 {isLoading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin block"></span> : <ArrowRight size={18} />}
                             </button>
